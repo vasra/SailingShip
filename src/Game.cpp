@@ -13,8 +13,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1024;
+const unsigned int SCR_HEIGHT = 768;
 
 std::string vShader{ "shaders\\vShader.txt" };
 std::string fShader{ "shaders\\fShader.txt" };
@@ -63,15 +63,27 @@ int main()
     Shader shader(vShader, fShader);
 
     float shipVertices[] = {
-        -0.1f, -1.0f, 0.0f,
-        -0.1f, -0.6f, 0.0f,
-        0.1f, -1.0f, 0.0f,
-        0.1f, -0.6f, 0.0f
+        // positions           // texture coordinates
+        -0.2f, -0.9f, 0.0f,    0.0f, 0.0f, // bottom left
+        -0.2f, -0.1f, 0.0f,    0.0f, 1.0f, // upper left
+         0.2f, -0.9f, 0.0f,    1.0f, 0.0f, // bottom right
+         0.2f, -0.1f, 0.0f,    1.0f, 1.0f  // upper right
     };
 
     unsigned int shipIndices[] = {
         0, 1, 2, // first triangle
         1, 2, 3  // second triangle
+    };
+
+    float islandVertices[] = {
+        0.5f, 0.0f, 0.0f, // bottom left
+        0.5f, 0.9f, 0.0f, // upper left
+        0.8f, 0.0f, 0.0f, // bottom right
+        0.8f, 0.9f, 0.0f  // upper right
+    };
+    unsigned int islandIndices[] = {
+        0, 1, 2, //first triangle
+        1, 2, 3 // second triangle
     };
 
     unsigned int VBO, VAO, EBO;
@@ -82,47 +94,58 @@ int main()
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(islandVertices), islandVertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(islandIndices), islandIndices, GL_STATIC_DRAW);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(shipVertices), shipVertices, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(shipIndices), shipIndices, GL_STATIC_DRAW);
 
     // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    // texture attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
-    // load and create a texture 
+    // load and create the ship texture 
     // -------------------------
     unsigned int shipTexture;
     glGenTextures(1, &shipTexture);
     glBindTexture(GL_TEXTURE_2D, shipTexture);
     
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    
-    // set texture filtering parameters
+    float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+    // texture wrapping and filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
-    // load image, create texture and generate mipmaps
+    // load image and create texture
     int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
-    unsigned char* data = stbi_load("textures\\ship.png", &width, &height, &nrChannels, 0);
+    stbi_set_flip_vertically_on_load(true);
+    const char* ship = "textures\\ship2.jpg";
+    unsigned char* data = stbi_load(ship, &width, &height, &nrChannels, 0);
     if (data) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else
-        std::cout << "Failed to load texture" << std::endl;
+        std::cout << "Failed to load ship texture" << std::endl;
     
     stbi_image_free(data);
 
-    shader.use(); // don't forget to activate the shader before setting uniforms!  
-    shader.setInt("shipTexture", 0);
+    //shader.use(); // don't forget to activate the shader before setting uniforms!  
+    //shader.setInt("shipTexture", 0);
 
     //glm::mat4 view = glm::lookAt(cameraPos, cameraTarget, cameraUp);
 
@@ -138,22 +161,38 @@ int main()
 
         // render
         // ------
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        //glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.0f, 0.1f, 0.858824f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shader.use();
-
-        // bind Texture
-        glActiveTexture(GL_TEXTURE0);
+        // bind ship texture
         glBindTexture(GL_TEXTURE_2D, shipTexture);
+
+        shader.use();
 
         /*float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;*/
 
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(shipVertices), shipVertices, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(shipIndices), shipIndices, GL_STATIC_DRAW);
+
         glBindVertexArray(VAO);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        
+        /*glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(islandVertices), islandVertices, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(islandIndices), islandIndices, GL_STATIC_DRAW);
+
+        glBindVertexArray(VAO);
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);*/
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
