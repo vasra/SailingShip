@@ -61,7 +61,7 @@ int main()
     // build and compile our shader zprogram
     // ------------------------------------
     Shader shader(vShader, fShader);
-
+    
     float shipVertices[] = {
         // positions           // texture coordinates
         -0.2f, -0.9f, 0.0f,    0.0f, 0.0f, // bottom left
@@ -76,44 +76,60 @@ int main()
     };
 
     float islandVertices[] = {
-        0.5f, 0.0f, 0.0f, // bottom left
-        0.5f, 0.9f, 0.0f, // upper left
-        0.8f, 0.0f, 0.0f, // bottom right
-        0.8f, 0.9f, 0.0f  // upper right
+        // positions        // texture coordinates
+        0.7f, 0.5f, 0.0f,   0.0f, 0.0f, // bottom left
+        0.7f, 0.9f, 0.0f,   0.0f, 1.0f, // upper left
+        0.9f, 0.5f, 0.0f,   1.0f, 0.0f, // bottom right
+        0.9f, 0.9f, 0.0f,   1.0f, 1.0f  // upper right
     };
     unsigned int islandIndices[] = {
         0, 1, 2, //first triangle
         1, 2, 3 // second triangle
     };
 
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+    unsigned int VBO1, VBO2, shipVAO, islandVAO, EBO1, EBO2;
+    glGenVertexArrays(1, &shipVAO);
+    glGenVertexArrays(1, &islandVAO);
+    glGenBuffers(1, &VBO1);
+    glGenBuffers(1, &VBO2);
+    glGenBuffers(1, &EBO1);
+    glGenBuffers(1, &EBO2);
 
-    glBindVertexArray(VAO);
+    glBindVertexArray(shipVAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(islandVertices), islandVertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(islandIndices), islandIndices, GL_STATIC_DRAW);
-
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO1);
     glBufferData(GL_ARRAY_BUFFER, sizeof(shipVertices), shipVertices, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO1);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(shipIndices), shipIndices, GL_STATIC_DRAW);
 
-    // position attribute
+    // ship position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+        
+    // ship texture attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+    glBindVertexArray(islandVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(islandVertices), islandVertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO2);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(islandIndices), islandIndices, GL_STATIC_DRAW);
+
+    // island position attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // texture attribute
+    // island texture attribute
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
 
     // load and create the ship texture 
     // -------------------------
@@ -130,11 +146,11 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
-    // load image and create texture
     int width, height, nrChannels;
+
+    // load image and create ship texture
     stbi_set_flip_vertically_on_load(true);
-    const char* ship = "textures\\ship2.jpg";
-    unsigned char* data = stbi_load(ship, &width, &height, &nrChannels, 0);
+    unsigned char* data = stbi_load("textures\\ship2.jpg", &width, &height, &nrChannels, 0);
     if (data) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
@@ -144,8 +160,35 @@ int main()
     
     stbi_image_free(data);
 
-    //shader.use(); // don't forget to activate the shader before setting uniforms!  
-    //shader.setInt("shipTexture", 0);
+    // load and create the island texture 
+    // -------------------------
+    unsigned int islandTexture;
+    glGenTextures(1, &islandTexture);
+    glBindTexture(GL_TEXTURE_2D, islandTexture);
+
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+    // texture wrapping and filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // load image and create island texture
+    const char* island = "textures\\island.jpg";
+    data = stbi_load(island, &width, &height, &nrChannels, 0);
+    if (data) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+        std::cout << "Failed to load island texture" << std::endl;
+
+    stbi_image_free(data);
+    
+    shader.use(); // don't forget to activate the shader before setting uniforms!  
+    shader.setInt("shipTexture", 0);
+    shader.setInt("islandTexture", 1);
 
     //glm::mat4 view = glm::lookAt(cameraPos, cameraTarget, cameraUp);
 
@@ -161,38 +204,27 @@ int main()
 
         // render
         // ------
-        //glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClearColor(0.0f, 0.1f, 0.858824f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // bind ship texture
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, shipTexture);
-
+        // bind island texture
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, islandTexture);
         shader.use();
-
+        
         /*float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;*/
 
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(shipVertices), shipVertices, GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(shipIndices), shipIndices, GL_STATIC_DRAW);
-
-        glBindVertexArray(VAO);
-
+        glBindVertexArray(shipVAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+       
+        glBindVertexArray(islandVAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         
-        /*glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(islandVertices), islandVertices, GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(islandIndices), islandIndices, GL_STATIC_DRAW);
-
-        glBindVertexArray(VAO);
-
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);*/
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
@@ -201,9 +233,12 @@ int main()
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+    glDeleteVertexArrays(1, &shipVAO);
+    glDeleteVertexArrays(1, &islandVAO);
+    glDeleteBuffers(1, &VBO1);
+    glDeleteBuffers(1, &EBO1);
+    glDeleteBuffers(1, &VBO2);
+    glDeleteBuffers(1, &EBO2);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
