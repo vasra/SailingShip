@@ -1,5 +1,4 @@
-#ifndef SHADER_H
-#define SHADER_H
+#pragma once
 
 #include <glad.h> // include glad to get all the required OpenGL headers
 #include <glm.hpp>
@@ -36,4 +35,3 @@ public:
 private:
     void checkCompileErrors(unsigned int shader, std::string type);
 };
-#endif
