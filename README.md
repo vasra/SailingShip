@@ -1,2 +1,2 @@
 # SailingShip
-A very simple 2D game to practice on OpenGL.
+A very simple 3D game to practice on OpenGL.
