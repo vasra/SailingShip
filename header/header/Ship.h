@@ -9,10 +9,10 @@ public:
     Ship();
     ~Ship();
     
-    void bind();
-    void unBind();
+    void bind() const;
+    void unBind() const;
 
-    size_t getIndicesSize();
+    size_t getIndicesSize() const;
 
 private:
     float m_shipVertices[20] = {

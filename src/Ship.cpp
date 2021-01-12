@@ -22,21 +22,19 @@ Ship::Ship()
     glEnableVertexAttribArray(1);
 }
 
-Ship::~Ship()
-{
-}
+Ship::~Ship() {}
 
-void Ship::bind()
+void Ship::bind() const
 {
     glBindVertexArray(m_shipVAO);
 }
 
-void Ship::unBind()
+void Ship::unBind() const
 {
     glBindVertexArray(0);
 }
 
-size_t Ship::getIndicesSize()
+size_t Ship::getIndicesSize() const
 {
     return sizeof(m_shipIndices);
 }

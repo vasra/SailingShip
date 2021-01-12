@@ -1,9 +1,9 @@
 #include "Shader.h"
 
-Shader::Shader(std::string& vertexPath, std::string& fragmentPath)
+Shader::Shader(std::string& vertexPath, std::string& fragmentPath, std::string* geometryPath)
 {
-    std::string vShader, fShader, line;
-    std::ifstream vShaderPath, fShaderPath;
+    std::string vShader, fShader, gShader, line;
+    std::ifstream vShaderPath, fShaderPath, gShaderPath;
 
     vShaderPath.open(vertexPath, std::ios::in);
     while (getline(vShaderPath, line)) {
@@ -21,10 +21,23 @@ Shader::Shader(std::string& vertexPath, std::string& fragmentPath)
     }
     fShaderPath.close();
 
+    line = "";
+
+    // geometry shader
+    if (geometryPath != nullptr) {
+        gShaderPath.open(*geometryPath, std::ios::in);
+        while (getline(gShaderPath, line)) {
+            gShader.append(line);
+            gShader.push_back('\n');
+        }
+        gShaderPath.close();
+    }
+
     const char* vShaderCode = vShader.c_str();
     const char* fShaderCode = fShader.c_str();
+   
     // compile shaders
-    unsigned int vertex, fragment;
+    unsigned int vertex, fragment, geometry;
     
     // vertex shader
     vertex = glCreateShader(GL_VERTEX_SHADER);
@@ -38,16 +51,28 @@ Shader::Shader(std::string& vertexPath, std::string& fragmentPath)
     glCompileShader(fragment);
     checkCompileErrors(fragment, "FRAGMENT");
     
+    if (geometryPath != nullptr) {
+        const char* gShaderCode = gShader.c_str();
+        geometry = glCreateShader(GL_GEOMETRY_SHADER);
+        glShaderSource(geometry, 1, &gShaderCode, NULL);
+        glCompileShader(geometry);
+        checkCompileErrors(geometry, "GEOMETRY");
+    }
+
     // shader Program
     ID = glCreateProgram();
     glAttachShader(ID, vertex);
     glAttachShader(ID, fragment);
+    if (geometryPath != nullptr)
+        glAttachShader(ID, geometry);
     glLinkProgram(ID);
     checkCompileErrors(ID, "PROGRAM");
 
     // delete the shaders as they're linked into our program now and no longer necessary
     glDeleteShader(vertex);
     glDeleteShader(fragment);
+    if (geometryPath != nullptr)
+        glDeleteShader(geometry);
 }
 
 void Shader::use()

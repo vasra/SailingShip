@@ -1,14 +1,11 @@
 #version 330 core
-out vec4 shipFragColor;
-out vec4 islandFragColor;
-  
-in vec2 TexCoord;
+out vec4 FragColor;
 
-uniform sampler2D shipTexture;
-uniform sampler2D islandTexture;
+in vec2 TexCoords;
+
+uniform sampler2D texture_diffuse1;
 
 void main()
-{
-    shipFragColor = texture(shipTexture, TexCoord);
-    islandFragColor = texture(islandTexture, TexCoord);
+{    
+    FragColor = texture(texture_diffuse1, TexCoords);
 }

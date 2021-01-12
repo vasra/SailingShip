@@ -23,21 +23,19 @@ Island::Island()
     glEnableVertexAttribArray(1);
 }
 
-Island::~Island()
-{
-}
+Island::~Island() {}
 
-void Island::bind()
+void Island::bind() const
 {
     glBindVertexArray(m_islandVAO);
 }
 
-void Island::unBind()
+void Island::unBind() const
 {
     glBindVertexArray(0);
 }
 
-size_t Island::getIndicesSize()
+size_t Island::getIndicesSize() const
 {
     return sizeof(m_islandIndices);
 }
