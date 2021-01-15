@@ -9,19 +9,19 @@
 #include <Ship.h>
 #include <Island.h>
 #include <Model.h>
-#include <C:\Users\billaros\source\repos\SailingShip\header\header\Camera.h>
+#include <C:\\Users\rava\\Desktop\\OpenGL\\SailingShip\\header\\header\\Camera.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include <iostream>
 
-void processInput(GLFWwindow* window);
+void processInput(GLFWwindow* window, Shader& shader);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-// settings
+// window settings
 const unsigned int windowWidth = 1024;
 const unsigned int windowHeight = 768;
 
@@ -29,13 +29,11 @@ std::string vShader{ "shaders\\vShader.txt" };
 std::string fShader{ "shaders\\fshader.txt" };
 
 Camera::Camera camera{ glm::vec3(0.0f, 0.0f, 3.0f) };
+Ship::Ship ship;
+
 float lastX = windowWidth / 2.0f;
 float lastY = windowHeight / 2.0f;
 bool firstMouse = true;
-
-//glm::vec3 cameraPos{ 0.0f, 0.0f, 3.0f };
-//glm::vec3 cameraFront{ 0.0f, 0.0f, -1.0f };
-//glm::vec3 cameraUp{ 0.0f, 1.0f, 3.0f };
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -77,7 +75,6 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     Shader shader(vShader, fShader);
-    Ship ship;
     Island island;
 
     glm::vec3 islandPositions[] = {
@@ -85,70 +82,6 @@ int main()
         glm::vec3(-2.0f, 0.0f, 0.0f)
     };
 
-    // load and create the ship texture 
-    // -------------------------
-    //unsigned int shipTexture, islandTexture;
-    //glGenTextures(1, &shipTexture);
-    //glGenTextures(1, &islandTexture);
-    //
-    //float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
-
-    //shader.use();
-    //glActiveTexture(GL_TEXTURE0);
-    //glBindTexture(GL_TEXTURE_2D, shipTexture);
-    //shader.setInt("shipTexture", 0);
-
-    //glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-    //// texture wrapping and filtering parameters
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //
-    //int width, height, nrChannels;
-
-    //// load image and create ship texture
-    //stbi_set_flip_vertically_on_load(true);
-    //unsigned char* data = stbi_load("textures\\ship2.jpg", &width, &height, &nrChannels, 0);
-    //if (data) {
-    //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    //    glGenerateMipmap(GL_TEXTURE_2D);
-    //}
-    //else {
-    //    std::cout << "Failed to load ship texture" << std::endl;
-    //}
-
-    //stbi_image_free(data);
-
-    //// load and create the island texture 
-    //// -------------------------
-    //glActiveTexture(GL_TEXTURE1);
-    //glBindTexture(GL_TEXTURE_2D, islandTexture);
-    ////shader.setInt("islandTexture", 1);
-    //glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-    //// texture wrapping and filtering parameters
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    //// load image and create island texture
-    //data = stbi_load("textures\\island.jpg", &width, &height, &nrChannels, 0);
-    //if (data) {
-    //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    //    glGenerateMipmap(GL_TEXTURE_2D);
-    //}
-    //else {
-    //    std::cout << "Failed to load island texture" << std::endl;
-    //}
-
-    //stbi_image_free(data);
-
-    // render loop
-    // -----------
-    
     glm::mat4 projection = glm::mat4(1.0f);
     glm::mat4 view = glm::mat4(1.0f);
     
@@ -158,16 +91,13 @@ int main()
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
 
-    //shipModel = new Model{ "C:\\Users\\billaros\\source\\repos\\SailingShip\\textures\\galleon-16th-century-ship\\GALEON.obj" };
-    Model islandModel{ "C:\\Users\\billaros\\source\\repos\\SailingShip\\textures\\TropicalIsland_extras\\TropicalIsland.obj" };
+    Model islandModel{ "C:\\Users\\rava\\Desktop\\OpenGL\\SailingShip\\textures\\TropicalIsland_extras\\TropicalIsland.obj" };
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        processInput(window);
+        processInput(window, shader);
 
-        // render
-        // ------
         glClearColor(0.0f, 0.1f, 0.858824f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
@@ -178,45 +108,19 @@ int main()
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
         
-        /*glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        glm::mat4 view = camera.getViewMatrix();*/
-
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
         model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.03f, 0.03f, 0.03f));
         shader.setMat4("model", model);
         
-
-        /*shader.setInt("shipTexture", 0);
-        shader.setInt("islandTexture", 1);
-        ship.bind();
-        glDrawElements(GL_TRIANGLES, ship.getIndicesSize(), GL_UNSIGNED_INT, 0);*/
-  
-        /*shader.setInt("shipTexture", 1);
-        shader.setInt("islandTexture", 0);*/
-
-        
-        /*glm::mat4 islandModel = glm::translate(islandModel, glm::vec3(0.0f, 0.0f, -1.0f));
-        shader.setMat4("model", islandModel);*/
-        /*island.bind();
-        glDrawElements(GL_TRIANGLES, island.getIndicesSize(), GL_UNSIGNED_INT, 0);  
-
-        for (unsigned int i = 0; i < sizeof(islandPositions) / sizeof(glm::vec3); i++) {
-            model = glm::mat4(1.0f);
-            model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            model = glm::translate(model, islandPositions[i]);
-            shader.setMat4("model", model);
-            glDrawElements(GL_TRIANGLES, island.getIndicesSize(), GL_UNSIGNED_INT, 0);
-        }*/
-        (ship.getModel())->Draw(shader);
+        ship.getModel()->Draw(shader);
 
         model = glm::translate(model, glm::vec3(16.0f, -1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
         shader.setMat4("model", model);
         islandModel.Draw(shader);
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
+        
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -238,14 +142,21 @@ int main()
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow* window)
+void processInput(GLFWwindow* window, Shader& shader)
 {
     
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         camera.ProcessKeyboard(Camera::Camera_Movement::FORWARD, deltaTime);
+        glm::mat4 shipDirection = ship.move(Ship::Ship_Movement::FORWARD, deltaTime);
+        shipDirection = glm::rotate(shipDirection, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        shipDirection = glm::scale(shipDirection, glm::vec3(0.03f, 0.03f, 0.03f));
+        shader.setMat4("model", shipDirection);
+
+        ship.getModel()->Draw(shader);
+    }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         camera.ProcessKeyboard(Camera::Camera_Movement::BACKWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
