@@ -1,7 +1,18 @@
 #pragma once
 
 #include <glad.h>
+#include <glm.hpp>
+#include <matrix_transform.hpp>
+
+#include <Model.h>
 #include <vector>
+
+enum class Ship_Movement {
+    FORWARD,
+    BACKWARD,
+    LEFT,
+    RIGHT
+};
 
 class Ship
 {
@@ -13,6 +24,9 @@ public:
     void unBind() const;
 
     size_t getIndicesSize() const;
+    glm::mat4 move(Ship_Movement movement, float dx, float dy, float dz);
+
+    Model* getModel();
 
 private:
     float m_shipVertices[20] = {
@@ -28,6 +42,12 @@ private:
         1, 2, 3  // second triangle
     };
 
-    unsigned int m_shipVAO, m_shipVBO, m_shipEBO;
+    unsigned int m_shipVAO;
+    unsigned int m_shipVBO;
+    unsigned int m_shipEBO;
+
+    const float m_movementSpeed = 2.5f;
+
+    Model* m_shipModel;
 };
 
