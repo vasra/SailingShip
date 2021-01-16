@@ -1,43 +1,48 @@
 #include "Ship.h"
 
-Ship::Ship::Ship()
+Ship::Ship::Ship(std::string& model, glm::vec3 origin) : m_shipModel(model), m_position(origin)
 {
-    m_shipModel = new Model( "C:\\Users\\rava\\Desktop\\OpenGL\\SailingShip\\textures\\galleon-16th-century-ship\\GALEON.obj" );
+    m_shipModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
+    m_shipModelMatrix = glm::rotate(m_shipModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    m_shipModelMatrix = glm::scale(m_shipModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
 }
 
-Ship::Ship::~Ship()
-{
-    delete m_shipModel;
-}
+Ship::Ship::~Ship() {}
 
-void Ship::Ship::bind() const
-{
-    glBindVertexArray(m_shipVAO);
-}
-
-void Ship::Ship::unBind() const
-{
-    glBindVertexArray(0);
-}
-
-size_t Ship::Ship::getIndicesSize() const
-{
-    return sizeof(m_shipIndices);
-}
-
-Model* Ship::Ship::getModel()
+Model& Ship::Ship::getModel()
 {
     return m_shipModel;
 }
 
-glm::mat4 Ship::Ship::move(Ship_Movement movement, float deltaTime)
+glm::vec3 Ship::Ship::getPosition()
+{
+    return m_position;
+}
+
+// TODO: Increase/decrease ship speed with arrow keys
+void Ship::Ship::move(Ship_Movement movement, float deltaTime)
 {
     float velocity = m_movementSpeed * deltaTime;
-    glm::mat4 model = glm::mat4(1.0f);
 
     if (movement == Ship_Movement::FORWARD) {
-        model = glm::translate(model, glm::vec3(0, 0, velocity));
+        m_position -= glm::vec3(0.0f, 0.0f, velocity);
     }
+    else if(movement == Ship_Movement::BACKWARD) {
+        m_position += glm::vec3(0.0f, 0.0f, velocity);
+    }
+    else if (movement == Ship_Movement::LEFT) {
+        m_position -= glm::vec3(velocity, 0.0f, 0.0f);
+    }
+    else if (movement == Ship_Movement::RIGHT) {
+        m_position += glm::vec3(velocity, 0.0f, 0.0f);
+    }
+}
 
-    return model;
+void Ship::Ship::render(Shader& shader)
+{
+    m_shipModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
+    m_shipModelMatrix = glm::rotate(m_shipModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    m_shipModelMatrix = glm::scale(m_shipModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
+    shader.setMat4("model", m_shipModelMatrix);
+    m_shipModel.Draw(shader);
 }

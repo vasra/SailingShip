@@ -5,6 +5,8 @@
 #include <matrix_transform.hpp>
 
 #include <Model.h>
+#include <Shader.h>
+
 #include <vector>
 
 namespace Ship
@@ -19,38 +21,24 @@ namespace Ship
     class Ship
     {
     public:
-        Ship();
+        Ship(std::string& model, glm::vec3 origin = glm::vec3(0.0f, -1.0f, 0.0f));
         ~Ship();
 
-        void bind() const;
-        void unBind() const;
+        void move(Ship_Movement movement, float deltaTime);
 
-        size_t getIndicesSize() const;
-        glm::mat4 move(Ship_Movement movement, float deltaTime);
+        glm::vec3 getPosition();
 
-        Model* getModel();
+        Model& getModel();
+
+        void render(Shader& shader);
 
     private:
-        float m_shipVertices[20] = {
-            // positions           // texture coordinates
-            -0.2f, -0.9f, 0.0f,    0.0f, 0.0f, // bottom left
-            -0.2f, -0.1f, 0.0f,    0.0f, 1.0f, // upper left
-             0.2f, -0.9f, 0.0f,    1.0f, 0.0f, // bottom right
-             0.2f, -0.1f, 0.0f,    1.0f, 1.0f  // upper right
-        };
 
-        unsigned int m_shipIndices[6] = {
-            0, 1, 2, // first triangle
-            1, 2, 3  // second triangle
-        };
+        float m_movementSpeed = 2.5f;
 
-        unsigned int m_shipVAO;
-        unsigned int m_shipVBO;
-        unsigned int m_shipEBO;
+        Model m_shipModel;
 
-        const float m_movementSpeed = 2.5f;
-
-        Model* m_shipModel;
+        glm::vec3 m_position;
+        glm::mat4 m_shipModelMatrix;
     };
-
 }

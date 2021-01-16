@@ -1,41 +1,25 @@
 #include "Island.h"
 
-Island::Island()
+Island::Island::Island(std::string& model, glm::vec3 origin) : m_islandModel(model), m_position(origin)
 {
-    glGenVertexArrays(1, &m_islandVAO);
-    glGenBuffers(1, &m_islandVBO);
-    glGenBuffers(1, &m_islandEBO);
-
-    glBindVertexArray(m_islandVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, m_islandVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(m_islandVertices), m_islandVertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_islandEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(m_islandIndices), m_islandIndices, GL_STATIC_DRAW);
-
-    // island position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // island texture attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+    m_islandModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
+    m_islandModelMatrix = glm::scale(m_islandModelMatrix, glm::vec3(0.05f, 0.05f, 0.05f));
 }
 
-Island::~Island() {}
+Island::Island::~Island() {}
 
-void Island::bind() const
+Model& Island::Island::getModel()
 {
-    glBindVertexArray(m_islandVAO);
+    return m_islandModel;
 }
 
-void Island::unBind() const
+glm::vec3 Island::Island::getPosition()
 {
-    glBindVertexArray(0);
+    return m_position;
 }
 
-size_t Island::getIndicesSize() const
+void Island::Island::render(Shader& shader)
 {
-    return sizeof(m_islandIndices);
+    shader.setMat4("model", m_islandModelMatrix);
+    m_islandModel.Draw(shader);
 }

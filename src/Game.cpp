@@ -9,14 +9,14 @@
 #include <Ship.h>
 #include <Island.h>
 #include <Model.h>
-#include <C:\\Users\rava\\Desktop\\OpenGL\\SailingShip\\header\\header\\Camera.h>
+#include <C:\Users\billaros\source\repos\SailingShip\header\header\Camera.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include <iostream>
 
-void processInput(GLFWwindow* window, Shader& shader);
+void processInput(GLFWwindow* window, Shader& shader, Ship::Ship& ship);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -27,9 +27,10 @@ const unsigned int windowHeight = 768;
 
 std::string vShader{ "shaders\\vShader.txt" };
 std::string fShader{ "shaders\\fshader.txt" };
+std::string shipModel{ "textures\\galleon-16th-century-ship\\GALEON.obj" };
+std::string islandModel{ "textures\\TropicalIsland_extras\\TropicalIsland.obj" };
 
 Camera::Camera camera{ glm::vec3(0.0f, 0.0f, 3.0f) };
-Ship::Ship ship;
 
 float lastX = windowWidth / 2.0f;
 float lastY = windowHeight / 2.0f;
@@ -40,8 +41,6 @@ float lastFrame = 0.0f;
 
 int main()
 {
-    // glfw: initialize and configure
-    // ------------------------------
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -51,8 +50,6 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    // glfw window creation
-    // --------------------
     GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "Let's sail!", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -65,8 +62,6 @@ int main()
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
@@ -75,7 +70,8 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     Shader shader(vShader, fShader);
-    Island island;
+    Ship::Ship ship{ shipModel };
+    Island::Island island{ islandModel, glm::vec3(2.0f, -1.0f, 0.0f) };
 
     glm::vec3 islandPositions[] = {
         glm::vec3(-2.0f, 1.0f, 0.0f),
@@ -91,12 +87,11 @@ int main()
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
 
-    Model islandModel{ "C:\\Users\\rava\\Desktop\\OpenGL\\SailingShip\\textures\\TropicalIsland_extras\\TropicalIsland.obj" };
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        processInput(window, shader);
+        processInput(window, shader, ship);
 
         glClearColor(0.0f, 0.1f, 0.858824f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -108,18 +103,9 @@ int main()
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
         
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
-        model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(0.03f, 0.03f, 0.03f));
-        shader.setMat4("model", model);
-        
-        ship.getModel()->Draw(shader);
+        ship.render(shader);
 
-        model = glm::translate(model, glm::vec3(16.0f, -1.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
-        shader.setMat4("model", model);
-        islandModel.Draw(shader);
+        island.render(shader);
         
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -142,7 +128,7 @@ int main()
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow* window, Shader& shader)
+void processInput(GLFWwindow* window, Shader& shader, Ship::Ship& ship)
 {
     
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -150,19 +136,20 @@ void processInput(GLFWwindow* window, Shader& shader)
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         camera.ProcessKeyboard(Camera::Camera_Movement::FORWARD, deltaTime);
-        glm::mat4 shipDirection = ship.move(Ship::Ship_Movement::FORWARD, deltaTime);
-        shipDirection = glm::rotate(shipDirection, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        shipDirection = glm::scale(shipDirection, glm::vec3(0.03f, 0.03f, 0.03f));
-        shader.setMat4("model", shipDirection);
-
-        ship.getModel()->Draw(shader);
+        ship.move(Ship::Ship_Movement::FORWARD, deltaTime);
     }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
         camera.ProcessKeyboard(Camera::Camera_Movement::BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        ship.move(Ship::Ship_Movement::BACKWARD, deltaTime);
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
         camera.ProcessKeyboard(Camera::Camera_Movement::LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        ship.move(Ship::Ship_Movement::LEFT, deltaTime);
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         camera.ProcessKeyboard(Camera::Camera_Movement::RIGHT, deltaTime);
+        ship.move(Ship::Ship_Movement::RIGHT, deltaTime);
+    }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes

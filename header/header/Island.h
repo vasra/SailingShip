@@ -1,31 +1,29 @@
 #pragma once
 
 #include <glad.h>
+#include <glm.hpp>
+#include <matrix_transform.hpp>
 
-class Island
+#include <Model.h>
+#include <Shader.h>
+
+namespace Island
 {
-public:
-    Island();
-    ~Island();
+    class Island
+    {
+    public:
+        Island(std::string& model, glm::vec3 origin);
+        ~Island();
 
-    void bind() const;
-    void unBind() const;
+        Model& getModel();
 
-    size_t getIndicesSize() const;
+        glm::vec3 getPosition();
 
-private:
-    float m_islandVertices[20] = {
-        // positions        // texture coordinates
-        0.6f, 0.5f, 0.0f,   0.0f, 0.0f, // bottom left
-        0.6f, 1.0f, 0.0f,   0.0f, 1.0f, // upper left
-        1.0f, 0.5f, 0.0f,   1.0f, 0.0f, // bottom right
-        1.0f, 1.0f, 0.0f,   1.0f, 1.0f  // upper right
+        void render(Shader& shader);
+
+    private:
+        Model m_islandModel;
+        glm::vec3 m_position;
+        glm::mat4 m_islandModelMatrix;
     };
-    unsigned int m_islandIndices[6] = {
-        0, 1, 2, //first triangle
-        1, 2, 3 // second triangle
-    };
-
-    unsigned int m_islandVAO, m_islandVBO, m_islandEBO;
-};
-
+}
