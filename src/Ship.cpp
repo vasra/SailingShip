@@ -19,10 +19,22 @@ glm::vec3 Ship::Ship::getPosition()
     return m_position;
 }
 
-// TODO: Increase/decrease ship speed with arrow keys
 void Ship::Ship::move(Ship_Movement movement, float deltaTime)
 {
+    if (movement == Ship_Movement::SPEED_UP) {
+        m_movementSpeed += 0.05f;
+        if (m_movementSpeed > 10.0f)
+            m_movementSpeed = 10.0f;
+    }
+    else if (movement == Ship_Movement::SPEED_DOWN) {
+        m_movementSpeed -= 0.05f;
+        if (m_movementSpeed < 1.0f)
+            m_movementSpeed = 1.0f;
+    }
+    std::cout << "Ship speed " << m_movementSpeed << std::endl;
+
     float velocity = m_movementSpeed * deltaTime;
+    std::cout << "Ship velocity " << velocity << std::endl;
 
     if (movement == Ship_Movement::FORWARD) {
         m_position -= glm::vec3(0.0f, 0.0f, velocity);

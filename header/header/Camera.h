@@ -13,7 +13,9 @@ namespace Camera
         FORWARD,
         BACKWARD,
         LEFT,
-        RIGHT
+        RIGHT,
+        SPEED_UP,
+        SPEED_DOWN
     };
 
     // Default camera values
@@ -91,7 +93,21 @@ namespace Camera
         // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
         void ProcessKeyboard(Camera_Movement direction, float deltaTime)
         {
+            if (direction == Camera_Movement::SPEED_UP) {
+                MovementSpeed += 0.05f;
+                if (MovementSpeed > 10.0f)
+                    MovementSpeed = 10.0f;
+            }
+            else if (direction == Camera_Movement::SPEED_DOWN) {
+                MovementSpeed -= 0.05f;
+                if (MovementSpeed < 1.0f)
+                    MovementSpeed = 1.0f;
+            }
+            //std::cout << "Camera speed " << MovementSpeed << std::endl;
+
             float velocity = MovementSpeed * deltaTime;
+            //std::cout << "Camera velocity " << velocity << std::endl;
+
             if (direction == Camera_Movement::FORWARD)
                 Position += Front * velocity;
             if (direction == Camera_Movement::BACKWARD)

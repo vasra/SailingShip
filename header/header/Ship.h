@@ -15,7 +15,9 @@ namespace Ship
         FORWARD,
         BACKWARD,
         LEFT,
-        RIGHT
+        RIGHT,
+        SPEED_UP,
+        SPEED_DOWN
     };
 
     class Ship
