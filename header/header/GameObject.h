@@ -7,8 +7,8 @@
 #include <Model.h>
 #include <Shader.h>
 
-namespace GameObject
-{
+namespace GameObject {   
+
     enum class Ship_Movement {
         FORWARD,
         BACKWARD,
@@ -18,29 +18,24 @@ namespace GameObject
         SPEED_DOWN
     };
 
-    class Island
-    {
+    class Island {
      public:
-        Island(std::string& model, glm::vec3 origin) : m_islandModel(model), m_position(origin)
-        {
+        Island(std::string& model, glm::vec3 origin) : m_islandModel(model), m_position(origin) {
             m_islandModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
             m_islandModelMatrix = glm::scale(m_islandModelMatrix, glm::vec3(0.05f, 0.05f, 0.05f));
         }
-        
+
         ~Island() {}
 
-        Model& getModel()
-        {
+        Model& getModel() {
             return m_islandModel;
         }
 
-        glm::vec3 getPosition()
-        {
+        glm::vec3 getPosition() {
             return m_position;
         }
 
-        void render(Shader& shader)
-        {
+        void render(Shader& shader) {
             shader.setMat4("model", m_islandModelMatrix);
             m_islandModel.Draw(shader);
         }
@@ -51,66 +46,99 @@ namespace GameObject
         glm::mat4 m_islandModelMatrix;
     };
 
-    class Ship
-    {
+    class Seagull {
      public:
-        Ship(std::string& model, glm::vec3 origin = glm::vec3(0.0f, -1.0f, 0.0f)) : m_shipModel(model), m_position(origin)
-        {
+        Seagull(std::string& model, glm::vec3 origin, glm::vec3 shipPosition) : m_seagullModel(model), m_position(origin) {
+            m_seagullModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
+            m_seagullModelMatrix = glm::rotate(m_seagullModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            m_seagullModelMatrix = glm::scale(m_seagullModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
+
+            m_shipOffsets = m_position + shipPosition;
+        }
+
+        ~Seagull() {}
+
+        Model& getModel() {
+            return m_seagullModel;
+        }
+
+        glm::vec3 getPosition() {
+            return m_position;
+        }
+
+        void render(glm::vec3 shipPosition, Shader& shader) {
+            m_position = m_shipOffsets + shipPosition;
+            m_seagullModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
+            m_seagullModelMatrix = glm::rotate(m_seagullModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            m_seagullModelMatrix = glm::scale(m_seagullModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
+            shader.setMat4("model", m_seagullModelMatrix);
+            m_seagullModel.Draw(shader);
+        }
+
+     private:
+        Model m_seagullModel;
+        glm::vec3 m_position;
+        glm::mat4 m_seagullModelMatrix;
+
+        // offsets from the ship
+        glm::vec3 m_shipOffsets;
+    };
+
+    class Ship {
+     public:
+        Ship(std::string& shipModel, std::string& seagullModel, glm::vec3 origin = glm::vec3(0.0f, 0.0f, 0.0f)) : m_shipModel(shipModel), m_position(origin) {
             m_shipModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
             m_shipModelMatrix = glm::rotate(m_shipModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             m_shipModelMatrix = glm::scale(m_shipModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
+
+            m_seagulls.emplace_back(seagullModel, glm::vec3(1.0f, 1.0f, 0.0f), m_position);
+            m_seagulls.emplace_back(seagullModel, glm::vec3(-1.0f, 1.0f, 0.0f), m_position);
         }
 
         ~Ship() {}
 
-        Model& getModel()
-        {
+        Model& getModel() {
             return m_shipModel;
         }
 
-        glm::vec3 getPosition()
-        {
+        glm::vec3 getPosition() {
             return m_position;
         }
 
-        void move(Ship_Movement movement, float deltaTime)
-        {
+        void move(Ship_Movement movement, float deltaTime) {
             if (movement == Ship_Movement::SPEED_UP) {
                 m_movementSpeed += 0.05f;
                 if (m_movementSpeed > 10.0f)
                     m_movementSpeed = 10.0f;
-            }
-            else if (movement == Ship_Movement::SPEED_DOWN) {
+            } else if (movement == Ship_Movement::SPEED_DOWN) {
                 m_movementSpeed -= 0.05f;
                 if (m_movementSpeed < 1.0f)
                     m_movementSpeed = 1.0f;
             }
-            //std::cout << "Ship speed " << m_movementSpeed << std::endl;
 
             float velocity = m_movementSpeed * deltaTime;
-            //std::cout << "Ship velocity " << velocity << std::endl;
 
             if (movement == Ship_Movement::FORWARD) {
                 m_position -= glm::vec3(0.0f, 0.0f, velocity);
-            }
-            else if (movement == Ship_Movement::BACKWARD) {
+            } else if (movement == Ship_Movement::BACKWARD) {
                 m_position += glm::vec3(0.0f, 0.0f, velocity);
-            }
-            else if (movement == Ship_Movement::LEFT) {
+            } else if (movement == Ship_Movement::LEFT) {
                 m_position -= glm::vec3(velocity, 0.0f, 0.0f);
-            }
-            else if (movement == Ship_Movement::RIGHT) {
+            } else if (movement == Ship_Movement::RIGHT) {
                 m_position += glm::vec3(velocity, 0.0f, 0.0f);
             }
         }
 
-        void render(Shader& shader)
-        {
+        void render(Shader& shader) {
             m_shipModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
             m_shipModelMatrix = glm::rotate(m_shipModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             m_shipModelMatrix = glm::scale(m_shipModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
             shader.setMat4("model", m_shipModelMatrix);
             m_shipModel.Draw(shader);
+        }
+
+        std::vector<GameObject::Seagull>& getSeagulls() {
+            return m_seagulls;
         }
 
      private:
@@ -120,44 +148,7 @@ namespace GameObject
 
         glm::vec3 m_position;
         glm::mat4 m_shipModelMatrix;
-    };
 
-    class Seagull
-    {
-    public:
-        Seagull(std::string& model, glm::vec3 origin) : m_seagullModel(model), m_position(origin)
-        {
-            m_seagullModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
-            m_seagullModelMatrix = glm::scale(m_seagullModelMatrix, glm::vec3(0.3f, 0.3f, 0.3f));
-        }
-
-        ~Seagull() {}
-
-        Model& getModel()
-        {
-            return m_seagullModel;
-        }
-
-        glm::vec3 getPosition()
-        {
-            return m_position;
-        }
-
-        void render(GameObject::Ship& ship, Shader& shader)
-        {
-            glm::vec3 shipPosition = ship.getPosition();
-            m_position = shipPosition + m_position;
-
-            m_seagullModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
-            //m_seagullModelMatrix = glm::rotate(m_seagullModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            m_seagullModelMatrix = glm::scale(m_seagullModelMatrix, glm::vec3(0.3f, 0.3f, 0.3f));
-            shader.setMat4("model", m_seagullModelMatrix);
-            m_seagullModel.Draw(shader);
-        }
-
-    private:
-        Model m_seagullModel;
-        glm::vec3 m_position;
-        glm::mat4 m_seagullModelMatrix;
+        std::vector<Seagull> m_seagulls;
     };
 }

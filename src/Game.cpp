@@ -30,9 +30,9 @@ std::string vShader{ "shaders\\vShader.txt" };
 std::string fShader{ "shaders\\fshader.txt" };
 std::string shipModel{ "textures\\galleon-16th-century-ship\\GALEON.obj" };
 std::string islandModel{ "textures\\TropicalIsland_extras\\TropicalIsland.obj" };
-std::string seagullModel{ "textures\\cnc-duck\\source\\1.obj" };
+std::string seagullModel{ "textures\\3DLowPoly-Seagull\\Seagull.obj" };
 
-Camera::Camera camera{ glm::vec3(0.0f, 0.0f, 3.0f) };
+Camera::Camera camera{ glm::vec3(0.0f, 1.0f, 3.0f) };
 
 float lastX = windowWidth / 2.0f;
 float lastY = windowHeight / 2.0f;
@@ -41,8 +41,7 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-int main()
-{
+int main() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -61,7 +60,7 @@ int main()
 
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
+    //glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -72,11 +71,9 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     Shader shader(vShader, fShader);
-    GameObject::Ship   ship{ shipModel };
-    GameObject::Island island{ islandModel, glm::vec3(2.0f, -1.0f, 0.0f) };
-    GameObject::Seagull seagull{ seagullModel, glm::vec3(5.0f, 0.5f, 0.0f) };
-    GameObject::Seagull seagull2{ seagullModel, glm::vec3(-5.0f, 0.5f, 0.0f) };
-    
+    GameObject::Ship   ship{ shipModel, seagullModel };
+    GameObject::Island island{ islandModel, glm::vec3(2.0f, 0.0f, 0.0f) };
+
     glm::vec3 islandPositions[] = {
         glm::vec3(-2.0f, 1.0f, 0.0f),
         glm::vec3(-2.0f, 0.0f, 0.0f)
@@ -111,8 +108,8 @@ int main()
 
         island.render(shader);
         
-        seagull.render(ship, shader);
-        seagull2.render(ship, shader);
+        for(auto &seagull : ship.getSeagulls())
+            seagull.render(ship.getPosition(), shader);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -124,17 +121,14 @@ int main()
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow* window, Shader& shader, GameObject::Ship& ship)
-{
-    
+void processInput(GLFWwindow* window, Shader& shader, GameObject::Ship& ship) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
         camera.ProcessKeyboard(Camera::Camera_Movement::SPEED_UP, deltaTime);
         ship.move(GameObject::Ship_Movement::SPEED_UP, deltaTime);
-    }
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+    } else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
         camera.ProcessKeyboard(Camera::Camera_Movement::SPEED_DOWN, deltaTime);
         ship.move(GameObject::Ship_Movement::SPEED_DOWN, deltaTime);
     }
@@ -142,16 +136,13 @@ void processInput(GLFWwindow* window, Shader& shader, GameObject::Ship& ship)
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         camera.ProcessKeyboard(Camera::Camera_Movement::FORWARD, deltaTime);
         ship.move(GameObject::Ship_Movement::FORWARD, deltaTime);
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+    } else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
         camera.ProcessKeyboard(Camera::Camera_Movement::BACKWARD, deltaTime);
         ship.move(GameObject::Ship_Movement::BACKWARD, deltaTime);
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+    } else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
         camera.ProcessKeyboard(Camera::Camera_Movement::LEFT, deltaTime);
         ship.move(GameObject::Ship_Movement::LEFT, deltaTime);
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+    } else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         camera.ProcessKeyboard(Camera::Camera_Movement::RIGHT, deltaTime);
         ship.move(GameObject::Ship_Movement::RIGHT, deltaTime);
     }
@@ -159,13 +150,11 @@ void processInput(GLFWwindow* window, Shader& shader, GameObject::Ship& ship)
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     if (firstMouse) {
         lastX = xpos;
         lastY = ypos;
@@ -183,7 +172,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 // ----------------------------------------------------------------------
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     camera.ProcessMouseScroll(yoffset);
 }
