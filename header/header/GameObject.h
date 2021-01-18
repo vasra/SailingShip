@@ -119,19 +119,23 @@ namespace GameObject {
             float velocity = m_movementSpeed * deltaTime;
 
             if (movement == Ship_Movement::FORWARD) {
+                m_angle = 180.0f;
                 m_position -= glm::vec3(0.0f, 0.0f, velocity);
             } else if (movement == Ship_Movement::BACKWARD) {
+                m_angle = 180.0f;
                 m_position += glm::vec3(0.0f, 0.0f, velocity);
             } else if (movement == Ship_Movement::LEFT) {
+                m_angle = 185.0f;
                 m_position -= glm::vec3(velocity, 0.0f, 0.0f);
             } else if (movement == Ship_Movement::RIGHT) {
+                m_angle = -185.0f;
                 m_position += glm::vec3(velocity, 0.0f, 0.0f);
             }
         }
 
         void render(Shader& shader) {
             m_shipModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
-            m_shipModelMatrix = glm::rotate(m_shipModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            m_shipModelMatrix = glm::rotate(m_shipModelMatrix, glm::radians(m_angle), glm::vec3(0.0f, 1.0f, 0.0f));
             m_shipModelMatrix = glm::scale(m_shipModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
             shader.setMat4("model", m_shipModelMatrix);
             m_shipModel.Draw(shader);
@@ -143,6 +147,7 @@ namespace GameObject {
 
      private:
         float m_movementSpeed = 2.5f;
+        float m_angle = 180.0f;
 
         Model m_shipModel;
 
