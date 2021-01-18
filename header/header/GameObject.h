@@ -46,6 +46,82 @@ namespace GameObject {
         glm::mat4 m_islandModelMatrix;
     };
 
+    class Animal {
+     public:
+         Animal(std::string& model, glm::vec3 origin, glm::vec3 target) : m_animalModel(model), m_position(origin) {
+             m_animalModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
+             m_animalModelMatrix = glm::rotate(m_animalModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+             m_animalModelMatrix = glm::scale(m_animalModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
+
+             m_offsets = m_position + target;
+         }
+
+         ~Animal() {}
+
+         Model& getModel() {
+             return m_animalModel;
+         }
+
+         glm::vec3 getPosition() {
+             return m_position;
+         }
+
+         void render(glm::vec3 seagullPosition, Shader& shader) {
+             m_position = m_offsets + seagullPosition;
+             m_animalModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
+             m_animalModelMatrix = glm::rotate(m_animalModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+             m_animalModelMatrix = glm::scale(m_animalModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
+             shader.setMat4("model", m_animalModelMatrix);
+             m_animalModel.Draw(shader);
+         }
+
+    private:
+        Model m_animalModel;
+        glm::vec3 m_position;
+        glm::mat4 m_animalModelMatrix;
+
+        // offsets from the seagull
+        glm::vec3 m_offsets;
+    };
+
+    class Bug {
+     public:
+        Bug(std::string& model, glm::vec3 origin, glm::vec3 seagullPosition) : m_bugModel(model), m_position(origin) {
+            m_bugModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
+            m_bugModelMatrix = glm::rotate(m_bugModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            m_bugModelMatrix = glm::scale(m_bugModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
+
+            m_seagullOffsets = m_position + seagullPosition;
+        }
+
+        ~Bug() {}
+
+        Model& getModel() {
+            return m_bugModel;
+        }
+
+        glm::vec3 getPosition() {
+            return m_position;
+        }
+
+        void render(glm::vec3 seagullPosition, Shader& shader) {
+            m_position = m_seagullOffsets + seagullPosition;
+            m_bugModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
+            m_bugModelMatrix = glm::rotate(m_bugModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            m_bugModelMatrix = glm::scale(m_bugModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
+            shader.setMat4("model", m_bugModelMatrix);
+            m_bugModel.Draw(shader);
+        }
+
+     private:
+        Model m_bugModel;
+        glm::vec3 m_position;
+        glm::mat4 m_bugModelMatrix;
+
+        // offsets from the seagull
+        glm::vec3 m_seagullOffsets;
+    };
+
     class Seagull {
      public:
         Seagull(std::string& model, glm::vec3 origin, glm::vec3 shipPosition) : m_seagullModel(model), m_position(origin) {
@@ -82,6 +158,7 @@ namespace GameObject {
 
         // offsets from the ship
         glm::vec3 m_shipOffsets;
+        std::vector<GameObject::Bug> m_bugs;
     };
 
     class Ship {
@@ -91,8 +168,8 @@ namespace GameObject {
             m_shipModelMatrix = glm::rotate(m_shipModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             m_shipModelMatrix = glm::scale(m_shipModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
 
-            m_seagulls.emplace_back(seagullModel, glm::vec3(1.0f, 1.0f, 0.0f), m_position);
-            m_seagulls.emplace_back(seagullModel, glm::vec3(-1.0f, 1.0f, 0.0f), m_position);
+            m_seagulls.emplace_back(seagullModel, glm::vec3(m_position.x + 1.0f, 1.0f, 0.0f), m_position);
+            m_seagulls.emplace_back(seagullModel, glm::vec3(m_position.x - 1.0f, 1.0f, 0.0f), m_position);
         }
 
         ~Ship() {}
