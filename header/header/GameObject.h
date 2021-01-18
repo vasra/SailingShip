@@ -66,8 +66,8 @@ namespace GameObject {
              return m_position;
          }
 
-         void render(glm::vec3 seagullPosition, Shader& shader) {
-             m_position = m_offsets + seagullPosition;
+         void render(glm::vec3 targetPosition, Shader& shader) {
+             m_position = m_offsets + targetPosition;
              m_animalModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
              m_animalModelMatrix = glm::rotate(m_animalModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
              m_animalModelMatrix = glm::scale(m_animalModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
@@ -75,7 +75,7 @@ namespace GameObject {
              m_animalModel.Draw(shader);
          }
 
-    private:
+     private:
         Model m_animalModel;
         glm::vec3 m_position;
         glm::mat4 m_animalModelMatrix;
