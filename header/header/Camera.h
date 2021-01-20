@@ -3,7 +3,7 @@
 #include <glad.h>
 #include <glm.hpp>
 #include <matrix_transform.hpp>
-
+#include <GameObject.h>
 #include <vector>
 
 namespace Camera
@@ -103,10 +103,8 @@ namespace Camera
                 if (MovementSpeed < 1.0f)
                     MovementSpeed = 1.0f;
             }
-            //std::cout << "Camera speed " << MovementSpeed << std::endl;
 
             float velocity = MovementSpeed * deltaTime;
-            //std::cout << "Camera velocity " << velocity << std::endl;
 
             if (direction == Camera_Movement::FORWARD)
                 Position += Front * velocity;

@@ -31,6 +31,7 @@ std::string fShader{ "shaders\\fshader.txt" };
 std::string shipModel{ "textures\\galleon-16th-century-ship\\GALEON.obj" };
 std::string islandModel{ "textures\\TropicalIsland_extras\\TropicalIsland.obj" };
 std::string seagullModel{ "textures\\3DLowPoly-Seagull\\Seagull.obj" };
+std::string bugModel{ "textures\\Dragonfly\\Dragonfly_obj\\Dragonfly.obj" };
 
 Camera::Camera camera{ glm::vec3(0.0f, 1.0f, 3.0f) };
 
@@ -60,7 +61,7 @@ int main() {
 
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    //glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -73,6 +74,17 @@ int main() {
     Shader shader(vShader, fShader);
     GameObject::Ship   ship{ shipModel, seagullModel };
     GameObject::Island island{ islandModel, glm::vec3(2.0f, 0.0f, 0.0f) };
+    std::vector<GameObject::Seagull> seagulls;
+    std::vector<GameObject::Bug> bugs;
+
+    seagulls.emplace_back(seagullModel, glm::vec3(ship.getPosition().x + 1.0f, ship.getPosition().y + 1.0f, ship.getPosition().z), ship.getPosition());
+    seagulls.emplace_back(seagullModel, glm::vec3(ship.getPosition().x - 1.0f, ship.getPosition().y + 1.0f, ship.getPosition().z), ship.getPosition());
+    seagulls.emplace_back(seagullModel, glm::vec3(ship.getPosition().x, ship.getPosition().y + 1.0f, ship.getPosition().z - 1.5f), ship.getPosition());
+
+    for (auto& seagull : seagulls) {
+        bugs.emplace_back(bugModel, glm::vec3(seagull.getPosition().x + 0.2f, seagull.getPosition().y, seagull.getPosition().z), seagull.getPosition());
+        bugs.emplace_back(bugModel, glm::vec3(seagull.getPosition().x - 0.2f, seagull.getPosition().y, seagull.getPosition().z), seagull.getPosition());
+    }
 
     glm::vec3 islandPositions[] = {
         glm::vec3(-2.0f, 1.0f, 0.0f),
@@ -108,8 +120,13 @@ int main() {
 
         island.render(shader);
         
-        for(auto &seagull : ship.getSeagulls())
-            seagull.render(ship.getPosition(), shader);
+        for (int i = 0; i < seagulls.size(); i++) {
+            seagulls[i].render(ship.getPosition(), shader);
+            for (int j = i; j < bugs.size(); j ++) {
+                bugs[j].render(seagulls[i].getPosition(), shader);
+
+            }
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
