@@ -50,7 +50,7 @@ namespace Camera
             float yaw = YAW, 
             float pitch = PITCH
         ) :
-            Front(glm::vec3(0.0f, 0.0f, -1.0f)),
+            Front(glm::vec3(0.0f, 1.0f, -1.0f)),
             MovementSpeed(SPEED), 
             MouseSensitivity(SENSITIVITY), 
             Zoom(ZOOM)
@@ -72,7 +72,7 @@ namespace Camera
             float yaw, 
             float pitch
         ) : 
-            Front(glm::vec3(0.0f, 0.0f, -1.0f)), 
+            Front(glm::vec3(0.0f, 1.0f, -1.0f)), 
             MovementSpeed(SPEED), 
             MouseSensitivity(SENSITIVITY), 
             Zoom(ZOOM)
@@ -85,35 +85,45 @@ namespace Camera
         }
 
         // returns the view matrix calculated using Euler Angles and the LookAt Matrix
-        glm::mat4 GetViewMatrix()
+        glm::mat4 GetViewMatrix(GameObject::Ship& ship)
         {
-            return glm::lookAt(Position, Position + Front, Up);
+            //return glm::lookAt(Position, Position + Front, Up);
+            return glm::lookAt(Position, ship.getPosition(), Up);
         }
 
         // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-        void ProcessKeyboard(Camera_Movement direction, float deltaTime)
+        void ProcessKeyboard(Camera_Movement direction, float deltaTime, GameObject::Ship& ship)
         {
             if (direction == Camera_Movement::SPEED_UP) {
                 MovementSpeed += 0.05f;
                 if (MovementSpeed > 10.0f)
                     MovementSpeed = 10.0f;
-            }
-            else if (direction == Camera_Movement::SPEED_DOWN) {
+            } else if (direction == Camera_Movement::SPEED_DOWN) {
                 MovementSpeed -= 0.05f;
                 if (MovementSpeed < 1.0f)
                     MovementSpeed = 1.0f;
             }
 
             float velocity = MovementSpeed * deltaTime;
-
-            if (direction == Camera_Movement::FORWARD)
+            
+            if (direction == Camera_Movement::FORWARD) {
                 Position += Front * velocity;
-            if (direction == Camera_Movement::BACKWARD)
+            }
+            if (direction == Camera_Movement::BACKWARD) {
                 Position -= Front * velocity;
-            if (direction == Camera_Movement::LEFT)
-                Position -= Right * velocity;
-            if (direction == Camera_Movement::RIGHT)
-                Position += Right * velocity;
+            }
+            if (direction == Camera_Movement::LEFT) {
+                m_shipAngle += 0.5f;
+                Position.x = ship.getPosition().x + glm::sin(glm::radians(m_shipAngle)) * m_shipDistance;
+                Position.z = ship.getPosition().z + glm::cos(glm::radians(m_shipAngle)) * m_shipDistance;
+                Front = ship.getFront();
+            }
+            if (direction == Camera_Movement::RIGHT) {
+                m_shipAngle -= 0.5f;
+                Position.x = ship.getPosition().x + glm::sin(glm::radians(m_shipAngle)) * m_shipDistance;
+                Position.z = ship.getPosition().z + glm::cos(glm::radians(m_shipAngle)) * m_shipDistance;
+                Front = ship.getFront();
+            }
         }
 
         // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -162,5 +172,8 @@ namespace Camera
             Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
             Up = glm::normalize(glm::cross(Right, Front));
         }
+
+        float m_shipAngle = 0.0f;
+        const float m_shipDistance = 3.0f;
     };
 }

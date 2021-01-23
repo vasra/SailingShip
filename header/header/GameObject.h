@@ -67,13 +67,7 @@ namespace GameObject {
         }
 
         void render(glm::vec3 seagullPosition, Shader& shader) {
-            
             m_position = m_seagullOffsets + seagullPosition;
-            if (print) {
-                std::cout << "seagullPosition " << glm::to_string(seagullPosition) << std::endl;
-                std::cout << "m_position " << glm::to_string(m_position) << std::endl;
-                print = false;
-            }
             m_bugModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
             m_bugModelMatrix = glm::rotate(m_bugModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             m_bugModelMatrix = glm::scale(m_bugModelMatrix, glm::vec3(0.0003f, 0.0003f, 0.0003f));
@@ -130,7 +124,10 @@ namespace GameObject {
 
     class Ship {
      public:
-        Ship(std::string& shipModel, std::string& seagullModel, glm::vec3 origin = glm::vec3(0.0f, 0.0f, 0.0f)) : m_shipModel(shipModel), m_position(origin) {
+        Ship(std::string& shipModel, std::string& seagullModel, glm::vec3 origin = glm::vec3(0.0f, 0.0f, 0.0f)) : 
+            m_shipModel(shipModel), 
+            m_position(origin), 
+            m_front(glm::vec3(0.0f, 0.0f, -1.0f)) {
             m_shipModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
             m_shipModelMatrix = glm::rotate(m_shipModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             m_shipModelMatrix = glm::scale(m_shipModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
@@ -160,17 +157,17 @@ namespace GameObject {
             float velocity = m_movementSpeed * deltaTime;
 
             if (movement == Ship_Movement::FORWARD) {
-                m_angle = 180.0f;
-                m_position -= glm::vec3(0.0f, 0.0f, velocity);
+                m_position += m_front * velocity;
             } else if (movement == Ship_Movement::BACKWARD) {
-                m_angle = 180.0f;
-                m_position += glm::vec3(0.0f, 0.0f, velocity);
+                m_position -= m_front * velocity;
             } else if (movement == Ship_Movement::LEFT) {
-                m_angle = 185.0f;
-                m_position -= glm::vec3(velocity, 0.0f, 0.0f);
+                m_angle += 0.5f;
+                m_front.x = glm::sin(glm::radians(m_angle));
+                m_front.z = glm::cos(glm::radians(m_angle));
             } else if (movement == Ship_Movement::RIGHT) {
-                m_angle = -185.0f;
-                m_position += glm::vec3(velocity, 0.0f, 0.0f);
+                m_angle -= 0.5f;
+                m_front.x = glm::sin(glm::radians(m_angle));
+                m_front.z = glm::cos(glm::radians(m_angle));
             }
         }
 
@@ -182,6 +179,14 @@ namespace GameObject {
             m_shipModel.Draw(shader);
         }
 
+        glm::vec3 getFront() {
+            return m_front;
+        }
+
+        float getAngle() {
+            return m_angle;
+        }
+
      private:
         float m_movementSpeed = 2.5f;
         float m_angle = 180.0f;
@@ -190,6 +195,6 @@ namespace GameObject {
 
         glm::vec3 m_position;
         glm::mat4 m_shipModelMatrix;
-
+        glm::vec3 m_front;
     };
 }

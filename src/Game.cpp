@@ -6,8 +6,6 @@
 #include <string_cast.hpp>
 
 #include <Shader.h>
-//#include <Ship.h>
-//#include <Island.h>
 #include <Model.h>
 #include <GameObject.h>
 #include <C:\Users\billaros\source\repos\SailingShip\header\header\Camera.h>
@@ -61,7 +59,7 @@ int main() {
 
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
+    //glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -91,11 +89,8 @@ int main() {
         glm::vec3(-2.0f, 0.0f, 0.0f)
     };
 
-    glm::mat4 projection = glm::mat4(1.0f);
-    glm::mat4 view = glm::mat4(1.0f);
-    
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -2.5f));
-    projection = glm::perspective(glm::radians(45.0f), static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 100.0f);
+    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.5f));
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 100.0f);
 
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
@@ -110,13 +105,14 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         shader.use();
-
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 view = camera.GetViewMatrix(ship);
+        
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
         
         ship.render(shader);
+        
 
         island.render(shader);
         
@@ -143,25 +139,25 @@ void processInput(GLFWwindow* window, Shader& shader, GameObject::Ship& ship) {
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-        camera.ProcessKeyboard(Camera::Camera_Movement::SPEED_UP, deltaTime);
         ship.move(GameObject::Ship_Movement::SPEED_UP, deltaTime);
+        camera.ProcessKeyboard(Camera::Camera_Movement::SPEED_UP, deltaTime, ship);
     } else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-        camera.ProcessKeyboard(Camera::Camera_Movement::SPEED_DOWN, deltaTime);
         ship.move(GameObject::Ship_Movement::SPEED_DOWN, deltaTime);
+        camera.ProcessKeyboard(Camera::Camera_Movement::SPEED_DOWN, deltaTime, ship);
     }
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera.ProcessKeyboard(Camera::Camera_Movement::FORWARD, deltaTime);
         ship.move(GameObject::Ship_Movement::FORWARD, deltaTime);
+        camera.ProcessKeyboard(Camera::Camera_Movement::FORWARD, deltaTime, ship);
     } else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera.ProcessKeyboard(Camera::Camera_Movement::BACKWARD, deltaTime);
         ship.move(GameObject::Ship_Movement::BACKWARD, deltaTime);
+        camera.ProcessKeyboard(Camera::Camera_Movement::BACKWARD, deltaTime, ship);
     } else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera.ProcessKeyboard(Camera::Camera_Movement::LEFT, deltaTime);
         ship.move(GameObject::Ship_Movement::LEFT, deltaTime);
+        camera.ProcessKeyboard(Camera::Camera_Movement::LEFT, deltaTime, ship);
     } else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera.ProcessKeyboard(Camera::Camera_Movement::RIGHT, deltaTime);
         ship.move(GameObject::Ship_Movement::RIGHT, deltaTime);
+        camera.ProcessKeyboard(Camera::Camera_Movement::RIGHT, deltaTime, ship);        
     }
 }
 
