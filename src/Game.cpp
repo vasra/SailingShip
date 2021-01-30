@@ -72,17 +72,11 @@ int main() {
     Shader shader(vShader, fShader);
     GameObject::Ship   ship{ shipModel, seagullModel };
     GameObject::Island island{ islandModel, glm::vec3(2.0f, 0.0f, 0.0f) };
-    std::vector<GameObject::Seagull> seagulls;
-    std::vector<GameObject::Bug> bugs;
 
-    seagulls.emplace_back(seagullModel, glm::vec3(ship.getPosition().x + 1.0f, ship.getPosition().y + 1.0f, ship.getPosition().z), ship.getPosition());
-    seagulls.emplace_back(seagullModel, glm::vec3(ship.getPosition().x - 1.0f, ship.getPosition().y + 1.0f, ship.getPosition().z), ship.getPosition());
-    seagulls.emplace_back(seagullModel, glm::vec3(ship.getPosition().x, ship.getPosition().y + 1.0f, ship.getPosition().z - 1.5f), ship.getPosition());
-
-    for (auto& seagull : seagulls) {
-        bugs.emplace_back(bugModel, glm::vec3(seagull.getPosition().x + 0.2f, seagull.getPosition().y, seagull.getPosition().z), seagull.getPosition());
-        bugs.emplace_back(bugModel, glm::vec3(seagull.getPosition().x - 0.2f, seagull.getPosition().y, seagull.getPosition().z), seagull.getPosition());
-    }
+    ship.populate(seagullModel);
+    std::vector<GameObject::Seagull>& seagulls = ship.getSeagulls();
+    for (auto& seagull : seagulls)
+        seagull.populate(bugModel);
 
     glm::vec3 islandPositions[] = {
         glm::vec3(-2.0f, 1.0f, 0.0f),
@@ -94,7 +88,7 @@ int main() {
 
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
-
+    
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
@@ -113,15 +107,12 @@ int main() {
         
         ship.render(shader);
         
-
         island.render(shader);
         
-        for (int i = 0; i < seagulls.size(); i++) {
-            seagulls[i].render(ship.getPosition(), shader);
-            for (int j = i; j < bugs.size(); j ++) {
-                bugs[j].render(seagulls[i].getPosition(), shader);
-
-            }
+        for (auto& seagull : seagulls) {
+            seagull.render(ship.getPosition(), shader);
+            for (auto& bug : seagull.getBugs())
+                bug.render(seagull.getPosition(), shader);
         }
 
         glfwSwapBuffers(window);

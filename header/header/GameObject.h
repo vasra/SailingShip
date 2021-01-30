@@ -82,6 +82,8 @@ namespace GameObject {
         bool print = true;
         // offsets from the seagull
         glm::vec3 m_seagullOffsets;
+
+        friend class Seagull;
     };
 
     class Seagull {
@@ -92,6 +94,7 @@ namespace GameObject {
             m_seagullModelMatrix = glm::scale(m_seagullModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
 
             m_shipOffsets = m_position - shipPosition;
+            m_radius = glm::sqrt((m_position.x - shipPosition.x) * (m_position.x - shipPosition.x) + (m_position.z - shipPosition.z) * (m_position.z - shipPosition.z));
         }
 
         ~Seagull() {}
@@ -105,21 +108,34 @@ namespace GameObject {
         }
 
         void render(glm::vec3 shipPosition, Shader& shader) {
-            m_position = m_shipOffsets + shipPosition;
             m_seagullModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
-            m_seagullModelMatrix = glm::rotate(m_seagullModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            m_seagullModelMatrix = glm::rotate(m_seagullModelMatrix, glm::radians(m_angle), glm::vec3(0.0f, 1.0f, 0.0f));
             m_seagullModelMatrix = glm::scale(m_seagullModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
             shader.setMat4("model", m_seagullModelMatrix);
             m_seagullModel.Draw(shader);
         }
 
-     private:
-        Model m_seagullModel;
-        glm::vec3 m_position;
-        glm::mat4 m_seagullModelMatrix;
+        void populate(std::string& bugModel) {
+            m_bugs.emplace_back(bugModel, glm::vec3(m_position.x + 0.2f, m_position.y, m_position.z), m_position);
+            m_bugs.emplace_back(bugModel, glm::vec3(m_position.x - 0.2f, m_position.y, m_position.z), m_position);
+        }
 
-        // offsets from the ship
-        glm::vec3 m_shipOffsets;
+        std::vector<Bug>& getBugs() {
+            return m_bugs;
+        }
+
+     private:
+         float m_angle = 180.0f;
+         float m_radius;
+         Model m_seagullModel;
+         glm::vec3 m_position;
+         glm::mat4 m_seagullModelMatrix;
+
+         // offsets from the ship
+         glm::vec3 m_shipOffsets;
+         std::vector<Bug> m_bugs;
+
+         friend class Ship;
     };
 
     class Ship {
@@ -158,16 +174,39 @@ namespace GameObject {
 
             if (movement == Ship_Movement::FORWARD) {
                 m_position += m_front * velocity;
+                for (auto& seagull : m_seagulls)
+                    seagull.m_position += m_front * velocity;
             } else if (movement == Ship_Movement::BACKWARD) {
                 m_position -= m_front * velocity;
+                for (auto& seagull : m_seagulls)
+                    seagull.m_position -= m_front * velocity;
             } else if (movement == Ship_Movement::LEFT) {
-                m_angle += 0.5f;
-                m_front.x = glm::sin(glm::radians(m_angle));
-                m_front.z = glm::cos(glm::radians(m_angle));
+                turn(Ship_Movement::LEFT);
             } else if (movement == Ship_Movement::RIGHT) {
+                turn(Ship_Movement::RIGHT);
+            }
+        }
+
+        void turn(Ship_Movement turn) {
+            if (turn == Ship_Movement::LEFT)
+                m_angle += 0.5f;
+            else if(turn == Ship_Movement::RIGHT)
                 m_angle -= 0.5f;
-                m_front.x = glm::sin(glm::radians(m_angle));
-                m_front.z = glm::cos(glm::radians(m_angle));
+            m_front.x = glm::sin(glm::radians(m_angle));
+            m_front.z = glm::cos(glm::radians(m_angle));
+
+            for (auto& seagull : m_seagulls) {
+                if (seagull.m_shipOffsets.x > 0) {
+                    seagull.m_position.x = m_position.x - glm::cos(glm::radians(m_angle)) * seagull.m_radius;
+                    seagull.m_position.z = m_position.z + glm::sin(glm::radians(m_angle)) * seagull.m_radius;
+                } else if (seagull.m_shipOffsets.x < 0) {
+                    seagull.m_position.x = m_position.x + glm::cos(glm::radians(m_angle)) * seagull.m_radius;
+                    seagull.m_position.z = m_position.z - glm::sin(glm::radians(m_angle)) * seagull.m_radius;
+                }
+                if (turn == Ship_Movement::LEFT)
+                    seagull.m_angle += 0.5f;
+                else if (turn == Ship_Movement::RIGHT)
+                    seagull.m_angle -= 0.5f;
             }
         }
 
@@ -179,12 +218,21 @@ namespace GameObject {
             m_shipModel.Draw(shader);
         }
 
+        void populate(std::string& seagullModel) {
+            m_seagulls.emplace_back(seagullModel, glm::vec3(m_position.x + 1.0f, m_position.y + 1.0f, m_position.z), m_position);
+            m_seagulls.emplace_back(seagullModel, glm::vec3(m_position.x - 1.0f, m_position.y + 1.0f, m_position.z), m_position);
+        }
+
         glm::vec3 getFront() {
             return m_front;
         }
 
         float getAngle() {
             return m_angle;
+        }
+
+        std::vector<Seagull>& getSeagulls() {
+            return m_seagulls;
         }
 
      private:
@@ -196,5 +244,7 @@ namespace GameObject {
         glm::vec3 m_position;
         glm::mat4 m_shipModelMatrix;
         glm::vec3 m_front;
+
+        std::vector<Seagull> m_seagulls;
     };
 }
