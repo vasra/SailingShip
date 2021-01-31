@@ -1,9 +1,21 @@
+/*********************************************************************
+ * \file   GameObject.h
+ * \brief  All the objects that will be used in the game.
+ * This file contains the namespace GameObject. To this namespace, 
+ * belong the classes that represent the ship, the islands, the 
+ * seagulls and the bugs. This namespace was created to avoid any
+ * naming conflicts with the already existing code that is used. Since
+ * the classes are small, they will be kept in this header file only.
+ * from https://learnopengl.com.
+ * \author Vasilis
+ * \date   January 2021
+ *********************************************************************/
 #pragma once
 
 #include <glad.h>
 #include <glm.hpp>
 #include <matrix_transform.hpp>
-
+#include <cmath>
 #include <Model.h>
 #include <Shader.h>
 
@@ -18,8 +30,16 @@ namespace GameObject {
         SPEED_DOWN
     };
 
+    /// <summary>
+    /// \class Island
+    /// </summary>
     class Island {
      public:
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="model"> The path of the 3D model that will be used.</param>
+        /// <param name="origin">The location of the island in the world map.</param>
         Island(std::string& model, glm::vec3 origin) : m_islandModel(model), m_position(origin) {
             m_islandModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
             m_islandModelMatrix = glm::scale(m_islandModelMatrix, glm::vec3(0.05f, 0.05f, 0.05f));
@@ -35,6 +55,10 @@ namespace GameObject {
             return m_position;
         }
 
+        /// <summary>
+        /// Renders the island when called in the main loop.
+        /// </summary>
+        /// <param name="shader">The main shader program.</param>
         void render(Shader& shader) {
             shader.setMat4("model", m_islandModelMatrix);
             m_islandModel.Draw(shader);
@@ -54,6 +78,7 @@ namespace GameObject {
             m_bugModelMatrix = glm::scale(m_bugModelMatrix, glm::vec3(0.0003f, 0.0003f, 0.0003f));
 
             m_seagullOffsets = m_position - seagullPosition;
+            m_radius = glm::sqrt(pow(m_seagullOffsets.x, 2.0f) + pow(m_seagullOffsets.z, 2.0f));
         }
 
         ~Bug() {}
@@ -66,11 +91,26 @@ namespace GameObject {
             return m_position;
         }
 
+        /// <summary>
+        /// Renders the bug. The bug will be rotating around its seagull over time, based
+        /// on its current position in the x axis (left or right of the seagull).
+        /// Scaling the model down to 0.0003 of its size was appropriate, in order to 
+        /// look normal.
+        /// </summary>
+        /// <param name="seagullPosition">The position of the seagull.</param>
+        /// <param name="shader">The main shader program.</param>
         void render(glm::vec3 seagullPosition, Shader& shader) {
-            m_position = m_seagullOffsets + seagullPosition;
+            if(m_position.x < seagullPosition.x)
+                m_position.x = seagullPosition.x + glm::sin(glfwGetTime()) * m_radius;
+            else
+                m_position.x = seagullPosition.x - glm::sin(glfwGetTime()) * m_radius;
+
+            m_position.z = seagullPosition.z + glm::cos(glfwGetTime()) * m_radius;
+
             m_bugModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
             m_bugModelMatrix = glm::rotate(m_bugModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             m_bugModelMatrix = glm::scale(m_bugModelMatrix, glm::vec3(0.0003f, 0.0003f, 0.0003f));
+
             shader.setMat4("model", m_bugModelMatrix);
             m_bugModel.Draw(shader);
         }
@@ -79,13 +119,17 @@ namespace GameObject {
         Model m_bugModel;
         glm::vec3 m_position;
         glm::mat4 m_bugModelMatrix;
-        bool print = true;
-        // offsets from the seagull
-        glm::vec3 m_seagullOffsets;
-
+        glm::vec3 m_seagullOffsets; ///< offsets from the seagull
+        float m_radius;             ///< radius from the seagull
         friend class Seagull;
     };
 
+    /// <summary>
+    /// \class Seagull
+    /// The Seagull object follows the ship around. When the ship turns, the seagulls turn along
+    /// with it. Each seagull will have two bugs following them, initialized in the popoulate()
+    /// function.
+    /// </summary>
     class Seagull {
      public:
         Seagull(std::string& model, glm::vec3 origin, glm::vec3 shipPosition) : m_seagullModel(model), m_position(origin) {
@@ -94,7 +138,7 @@ namespace GameObject {
             m_seagullModelMatrix = glm::scale(m_seagullModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
 
             m_shipOffsets = m_position - shipPosition;
-            m_radius = glm::sqrt((m_position.x - shipPosition.x) * (m_position.x - shipPosition.x) + (m_position.z - shipPosition.z) * (m_position.z - shipPosition.z));
+            m_radius = glm::sqrt(pow(m_shipOffsets.x, 2.0f) + pow(m_shipOffsets.z, 2.0f));
         }
 
         ~Seagull() {}
@@ -115,15 +159,26 @@ namespace GameObject {
             m_seagullModel.Draw(shader);
         }
 
+        /// <summary>
+        /// Initializes the Bug objects that will follow the seagull.
+        /// \warning This method is not called in the constructor during the initialization of the Seagull object.
+        ///          It must be called on its own after the object creation.
+        /// </summary>
+        /// <param name="bugModel">The path to the 3D model that will be used for the bugs.</param>
         void populate(std::string& bugModel) {
             m_bugs.emplace_back(bugModel, glm::vec3(m_position.x + 0.2f, m_position.y, m_position.z), m_position);
             m_bugs.emplace_back(bugModel, glm::vec3(m_position.x - 0.2f, m_position.y, m_position.z), m_position);
         }
 
+        /// <summary>
+        /// Returns a reference to the vector that
+        /// contains the bugs following the seagull.
+        /// </summary>
+        /// <returns></returns>
         std::vector<Bug>& getBugs() {
             return m_bugs;
         }
-
+ 
      private:
          float m_angle = 180.0f;
          float m_radius;
@@ -131,8 +186,7 @@ namespace GameObject {
          glm::vec3 m_position;
          glm::mat4 m_seagullModelMatrix;
 
-         // offsets from the ship
-         glm::vec3 m_shipOffsets;
+         glm::vec3 m_shipOffsets; ///< offsets from the ship
          std::vector<Bug> m_bugs;
 
          friend class Ship;

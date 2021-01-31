@@ -87,7 +87,6 @@ namespace Camera
         // returns the view matrix calculated using Euler Angles and the LookAt Matrix
         glm::mat4 GetViewMatrix(GameObject::Ship& ship)
         {
-            //return glm::lookAt(Position, Position + Front, Up);
             return glm::lookAt(Position, ship.getPosition(), Up);
         }
 
