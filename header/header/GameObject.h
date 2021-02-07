@@ -301,4 +301,84 @@ namespace GameObject {
 
         std::vector<Seagull> m_seagulls;
     };
+
+    class Ocean {
+     public:
+         Ocean(std::string& path) {
+             glGenVertexArrays(1, &m_VAO);
+             glGenBuffers(1, &m_VBO);
+             glGenBuffers(1, &m_EBO);
+
+             glBindVertexArray(m_VAO);
+
+             glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+             glBufferData(GL_ARRAY_BUFFER, sizeof(m_vertices), m_vertices, GL_STATIC_DRAW);
+
+             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
+             glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(m_indices), m_indices, GL_STATIC_DRAW);
+
+             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+             glEnableVertexAttribArray(0);
+
+             glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+             glEnableVertexAttribArray(1);
+
+             glBindVertexArray(0);
+
+             glGenTextures(1, &m_texture);
+             glBindTexture(GL_TEXTURE_2D, m_texture);
+
+             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+             int width, height, nrChannels;
+
+             stbi_set_flip_vertically_on_load(true);
+             unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
+
+             if (data) {
+                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+                 glGenerateMipmap(GL_TEXTURE_2D);
+             } else {
+                 std::cout << "ERROR::Failed to load ocean texture" << std::endl;
+             }
+
+             stbi_image_free(data);
+         }
+
+         ~Ocean() {}
+
+         void render(Shader& shader) {
+             shader.setInt("oceanTexture", 1);
+             bind();
+             glDrawElements(GL_TRIANGLES, sizeof(m_indices), GL_UNSIGNED_INT, 0);
+
+             //glBindVertexArray(0);
+         }
+
+     private:
+         void bind() {
+             glBindVertexArray(m_VAO);
+             glActiveTexture(GL_TEXTURE0);
+             glBindTexture(GL_TEXTURE_2D, m_texture);
+         }
+
+         unsigned int m_EBO;
+         unsigned int m_VBO;
+         unsigned int m_VAO;
+         unsigned int m_texture;
+
+         float m_vertices[20] = {
+             // positions       // texture coordinates
+             -5.0f, 0.0f, 0.0f,  0.0f, 0.0f, // bottom left
+             -5.0f, 0.0f, 3.0f,  0.0f, 1.0f, // upper left
+             -3.0f, 0.0f, 0.0f,  1.0f, 0.0f, // bottom right
+             -3.0f, 0.0f, 3.0f,  1.0f, 1.0f  // upper right
+         };
+
+         unsigned int m_indices[6] = {
+             0, 1, 2, // first triangle
+             1, 2, 3  // second triangle
+         };
+    };
 }

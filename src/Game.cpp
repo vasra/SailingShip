@@ -26,10 +26,13 @@ const unsigned int windowHeight = 768;
 
 std::string vShader{ "shaders\\vShader.txt" };
 std::string fShader{ "shaders\\fshader.txt" };
+std::string oceanVertexShader{ "shaders\\oceanVertexShader.txt" };
+std::string oceanFragmentShader{ "shaders\\oceanFragmentShader.txt" };
 std::string shipModel{ "textures\\galleon-16th-century-ship\\GALEON.obj" };
 std::string islandModel{ "textures\\TropicalIsland_extras\\TropicalIsland.obj" };
 std::string seagullModel{ "textures\\3DLowPoly-Seagull\\Seagull.obj" };
 std::string bugModel{ "textures\\Dragonfly\\Dragonfly_obj\\Dragonfly.obj" };
+std::string oceanTexture{ "C:\\Users\\billaros\\source\\repos\\SailingShip\\textures\\photos_2018_7_16_fst_sea-texture.jpg" };
 
 Camera::Camera camera{ glm::vec3(0.0f, 1.0f, 3.0f) };
 
@@ -59,7 +62,7 @@ int main() {
 
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    //glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -70,9 +73,11 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     Shader shader(vShader, fShader);
+    Shader oceanShader{ oceanVertexShader, oceanFragmentShader };
     GameObject::Ship   ship{ shipModel, seagullModel };
     GameObject::Island island{ islandModel, glm::vec3(2.0f, 0.0f, 0.0f) };
-
+    GameObject::Ocean  ocean{ oceanTexture };
+    
     ship.populate(seagullModel);
     std::vector<GameObject::Seagull>& seagulls = ship.getSeagulls();
     for (auto& seagull : seagulls)
@@ -127,6 +132,9 @@ int main() {
                 bug.render(seagull.getPosition(), shader);
         }
 
+        oceanShader.use();
+        ocean.render(oceanShader);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -135,8 +143,12 @@ int main() {
     return 0;
 }
 
-// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
+/// <summary>
+/// Process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
+/// </summary>
+/// <param name="window">Pointer to the OpenGL active window.</param>
+/// <param name="shader">Reference to the active shader program.</param>
+/// <param name="ship">Reference to the ship.</param>
 void processInput(GLFWwindow* window, Shader& shader, GameObject::Ship& ship) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
