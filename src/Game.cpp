@@ -98,10 +98,22 @@ int main() {
         glClearColor(0.0f, 0.1f, 0.858824f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        shader.use();
+        
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix(ship);
         
+        shader.use();
+        shader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
+        shader.setVec3("viewPos", camera.Position);
+
+        // light properties
+        shader.setVec3("light.ambient", 1.0f, 1.0f, 1.0f);
+        shader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
+        shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+        // material properties
+        shader.setFloat("material.shininess", 32.0f);
+
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
         
