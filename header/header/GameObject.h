@@ -79,17 +79,12 @@ namespace GameObject {
 
             m_seagullOffsets = m_position - seagullPosition;
             m_radius = glm::sqrt(pow(m_seagullOffsets.x, 2.0f) + pow(m_seagullOffsets.z, 2.0f));
+            m_angle = (m_seagullOffsets.x < 0) ? 180.0f : 0.0f;
         }
 
         ~Bug() {}
 
-        Model& getModel() {
-            return m_bugModel;
-        }
-
-        glm::vec3 getPosition() {
-            return m_position;
-        }
+        
 
         /// <summary>
         /// Renders the bug. The bug will be rotating around its seagull over time, based
@@ -100,12 +95,12 @@ namespace GameObject {
         /// <param name="seagullPosition">The position of the seagull.</param>
         /// <param name="shader">The main shader program.</param>
         void render(glm::vec3 seagullPosition, Shader& shader) {
-            if(m_position.x < seagullPosition.x)
-                m_position.x = seagullPosition.x + glm::sin(glfwGetTime()) * m_radius;
-            else
-                m_position.x = seagullPosition.x - glm::sin(glfwGetTime()) * m_radius;
+            m_angle += 0.01f;
+            if (m_angle > 360.0f)
+                m_angle = 0.0f;
 
-            m_position.z = seagullPosition.z + glm::cos(glfwGetTime()) * m_radius;
+            m_position.x = seagullPosition.x + glm::sin(m_angle) * m_radius;
+            m_position.z = seagullPosition.z + glm::cos(m_angle) * m_radius;
 
             m_bugModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
             m_bugModelMatrix = glm::rotate(m_bugModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -116,18 +111,20 @@ namespace GameObject {
         }
 
      private:
-        Model m_bugModel;
-        glm::vec3 m_position;
-        glm::mat4 m_bugModelMatrix;
-        glm::vec3 m_seagullOffsets; ///< offsets from the seagull
-        float m_radius;             ///< radius from the seagull
+        Model m_bugModel;           ///< The 3D model of the bug
+        glm::vec3 m_position;       ///< The current position of the bug in the world
+        glm::mat4 m_bugModelMatrix; ///< The model matrix of the bug
+        glm::vec3 m_seagullOffsets; ///< Offsets from the seagull
+        float m_radius;             ///< Radius from the seagull
+        float m_angle;              ///< The angle towards the seagull
+        
         friend class Seagull;
     };
 
     /// <summary>
     /// \class Seagull
     /// The Seagull object follows the ship around. When the ship turns, the seagulls turn along
-    /// with it. Each seagull will have two bugs following them, initialized in the popoulate()
+    /// with it. Each seagull will have two bugs following them, initialized in the populate()
     /// function.
     /// </summary>
     class Seagull {
@@ -142,14 +139,6 @@ namespace GameObject {
         }
 
         ~Seagull() {}
-
-        Model& getModel() {
-            return m_seagullModel;
-        }
-
-        glm::vec3 getPosition() {
-            return m_position;
-        }
 
         void render(glm::vec3 shipPosition, Shader& shader) {
             m_seagullModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
@@ -170,14 +159,10 @@ namespace GameObject {
             m_bugs.emplace_back(bugModel, glm::vec3(m_position.x - 0.2f, m_position.y, m_position.z), m_position);
         }
 
-        /// <summary>
-        /// Returns a reference to the vector that
-        /// contains the bugs following the seagull.
-        /// </summary>
-        /// <returns></returns>
-        std::vector<Bug>& getBugs() {
-            return m_bugs;
-        }
+        // Getters
+        glm::vec3 getPosition() { return m_position; }
+
+        std::vector<Bug>& getBugs() { return m_bugs; }
  
      private:
          float m_angle = 180.0f;
@@ -205,13 +190,9 @@ namespace GameObject {
 
         ~Ship() {}
 
-        Model& getModel() {
-            return m_shipModel;
-        }
-
-        glm::vec3 getPosition() {
-            return m_position;
-        }
+        // Getters
+        Model& getModel() { return m_shipModel; }
+        glm::vec3 getPosition() { return m_position; }
 
         void move(Ship_Movement movement, float deltaTime) {
             if (movement == Ship_Movement::SPEED_UP) {
@@ -277,17 +258,12 @@ namespace GameObject {
             m_seagulls.emplace_back(seagullModel, glm::vec3(m_position.x - 1.0f, m_position.y + 1.0f, m_position.z), m_position);
         }
 
-        glm::vec3 getFront() {
-            return m_front;
-        }
+        // Getters
+        glm::vec3 getFront() { return m_front; }
 
-        float getAngle() {
-            return m_angle;
-        }
+        std::vector<Seagull>& getSeagulls() { return m_seagulls; }
 
-        std::vector<Seagull>& getSeagulls() {
-            return m_seagulls;
-        }
+        float getAngle() { return m_angle; }
 
      private:
         float m_movementSpeed = 2.5f;
@@ -323,21 +299,19 @@ namespace GameObject {
              glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
              glEnableVertexAttribArray(1);
 
-             glBindVertexArray(0);
-
              glGenTextures(1, &m_texture);
              glBindTexture(GL_TEXTURE_2D, m_texture);
 
+             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
              glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
              glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-             int width, height, nrChannels;
-
              stbi_set_flip_vertically_on_load(true);
-             unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
+             unsigned char* data = stbi_load(path.c_str(), &m_width, &m_height, &m_nrChannels, 0);
 
              if (data) {
-                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_width, m_height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
                  glGenerateMipmap(GL_TEXTURE_2D);
              } else {
                  std::cout << "ERROR::Failed to load ocean texture" << std::endl;
@@ -349,17 +323,17 @@ namespace GameObject {
          ~Ocean() {}
 
          void render(Shader& shader) {
-             shader.setInt("oceanTexture", 1);
              bind();
-             glDrawElements(GL_TRIANGLES, sizeof(m_indices), GL_UNSIGNED_INT, 0);
-
-             //glBindVertexArray(0);
+             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
          }
 
+         unsigned int getTexture() {
+             return m_texture;
+         }
      private:
          void bind() {
              glBindVertexArray(m_VAO);
-             glActiveTexture(GL_TEXTURE0);
+             glActiveTexture(GL_TEXTURE0 + m_texture);
              glBindTexture(GL_TEXTURE_2D, m_texture);
          }
 
@@ -367,13 +341,16 @@ namespace GameObject {
          unsigned int m_VBO;
          unsigned int m_VAO;
          unsigned int m_texture;
+         int m_width;
+         int m_height;
+         int m_nrChannels;
 
          float m_vertices[20] = {
              // positions       // texture coordinates
-             -5.0f, 0.0f, 0.0f,  0.0f, 0.0f, // bottom left
-             -5.0f, 0.0f, 3.0f,  0.0f, 1.0f, // upper left
-             -3.0f, 0.0f, 0.0f,  1.0f, 0.0f, // bottom right
-             -3.0f, 0.0f, 3.0f,  1.0f, 1.0f  // upper right
+             -0.5f, -0.5f, 0.0f,  0.0f, 0.0f, // bottom left
+             -0.5f, 0.5f, 0.0f,  0.0f, 1.0f, // upper left
+             0.5f, -0.5f, 0.0f,  1.0f, 0.0f, // bottom right
+             0.5f, 0.5f, 0.0f,  1.0f, 1.0f  // upper right
          };
 
          unsigned int m_indices[6] = {

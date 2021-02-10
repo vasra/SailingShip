@@ -35,6 +35,8 @@ std::string bugModel{ "textures\\Dragonfly\\Dragonfly_obj\\Dragonfly.obj" };
 std::string oceanTexture{ "C:\\Users\\billaros\\source\\repos\\SailingShip\\textures\\photos_2018_7_16_fst_sea-texture.jpg" };
 
 Camera::Camera camera{ glm::vec3(0.0f, 1.0f, 3.0f) };
+float cameraRadius = glm::sqrt(pow(camera.Position.y, 2.0f) + pow(camera.Position.z, 2.0f));
+float cameraAngle = glm::atan(camera.Position.y / camera.Position.z);
 
 float lastX = windowWidth / 2.0f;
 float lastY = windowHeight / 2.0f;
@@ -62,7 +64,7 @@ int main() {
 
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
+    //glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -80,50 +82,57 @@ int main() {
     
     ship.populate(seagullModel);
     std::vector<GameObject::Seagull>& seagulls = ship.getSeagulls();
+    
     for (auto& seagull : seagulls)
         seagull.populate(bugModel);
-
+    
     glm::vec3 islandPositions[] = {
         glm::vec3(-2.0f, 1.0f, 0.0f),
         glm::vec3(-2.0f, 0.0f, 0.0f)
     };
 
-    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.5f));
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 100.0f);
-
-    shader.setMat4("view", view);
+    shader.use();
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 100.0f);
     shader.setMat4("projection", projection);
     
+    // light properties
+    shader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
+    shader.setVec3("light.ambient", 1.0f, 1.0f, 1.0f);
+    shader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
+    shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+    // material properties
+    shader.setFloat("material.shininess", 32.0f);
+
+    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(90.0f - glm::radians(cameraAngle)), glm::vec3(1.0f, 0.0f, 0.0f));
+    
+    oceanShader.use();
+    oceanShader.setMat4("model", model);
+    oceanShader.setMat4("projection", projection);
+    oceanShader.setMat4("view", view);
+    oceanShader.setInt("oceanTexture", ocean.getTexture());
+
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+
+        shader.use();
         processInput(window, shader, ship);
 
         glClearColor(0.0f, 0.1f, 0.858824f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix(ship);
+        view = camera.GetViewMatrix(ship);
         
         shader.use();
-        shader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
         shader.setVec3("viewPos", camera.Position);
-
-        // light properties
-        shader.setVec3("light.ambient", 1.0f, 1.0f, 1.0f);
-        shader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
-        shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
-
-        // material properties
-        shader.setFloat("material.shininess", 32.0f);
-
-        shader.setMat4("projection", projection);
         shader.setMat4("view", view);
         
         ship.render(shader);
-        
         island.render(shader);
         
         for (auto& seagull : seagulls) {
@@ -132,9 +141,9 @@ int main() {
                 bug.render(seagull.getPosition(), shader);
         }
 
-        oceanShader.use();
-        ocean.render(oceanShader);
-
+        
+        /*oceanShader.use();
+        ocean.render(oceanShader);*/
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
