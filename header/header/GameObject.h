@@ -21,6 +21,9 @@
 
 namespace GameObject {   
 
+    /// <summary>
+    /// Enum used to describe the movement of the ship.
+    /// </summary>
     enum class Ship_Movement {
         FORWARD,
         BACKWARD,
@@ -32,6 +35,7 @@ namespace GameObject {
 
     /// <summary>
     /// \class Island
+    /// The class used to render the Island objects.
     /// </summary>
     class Island {
      public:
@@ -47,11 +51,19 @@ namespace GameObject {
 
         ~Island() {}
 
-        Model& getModel() {
+        // Getters
+
+        /// <summary>
+        /// Returns the 3D model of the island.
+        /// </summary>
+        const Model& getModel() const {
             return m_islandModel;
         }
 
-        glm::vec3 getPosition() {
+        /// <summary>
+        /// Returns the position of the island.
+        /// </summary>
+        const glm::vec3 getPosition() const {
             return m_position;
         }
 
@@ -65,13 +77,23 @@ namespace GameObject {
         }
 
      private:
-        Model m_islandModel;
-        glm::vec3 m_position;
-        glm::mat4 m_islandModelMatrix;
+        Model m_islandModel;           ///< The 3D model of the island.
+        glm::vec3 m_position;          ///< The position of the island.
+        glm::mat4 m_islandModelMatrix; ///< The island's model matrix.    
     };
 
+    /// <summary>
+    /// \class Bug
+    /// The class used for rendering bugs.
+    /// </summary>
     class Bug {
      public:
+        /// <summary>
+        /// The constructor for the bug.
+        /// </summary>
+        /// <param name="model">Path to the 3D model.</param>
+        /// <param name="origin">The position in the world that the bug will spawn.</param>
+        /// <param name="seagullPosition">The position of the seagull that the bug will be following.</param>
         Bug(std::string& model, glm::vec3 origin, glm::vec3 seagullPosition) : m_bugModel(model), m_position(origin) {
             m_bugModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
             m_bugModelMatrix = glm::rotate(m_bugModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -84,8 +106,6 @@ namespace GameObject {
 
         ~Bug() {}
 
-        
-
         /// <summary>
         /// Renders the bug. The bug will be rotating around its seagull over time, based
         /// on its current position in the x axis (left or right of the seagull).
@@ -93,7 +113,7 @@ namespace GameObject {
         /// look normal.
         /// </summary>
         /// <param name="seagullPosition">The position of the seagull.</param>
-        /// <param name="shader">The main shader program.</param>
+        /// <param name="shader">The current shader program.</param>
         void render(glm::vec3 seagullPosition, Shader& shader) {
             m_angle += 0.01f;
             if (m_angle > 360.0f)
@@ -129,17 +149,29 @@ namespace GameObject {
     /// </summary>
     class Seagull {
      public:
+        /// <summary>
+        /// The constructor for the seagull.
+        /// </summary>
+        /// <param name="model">Path to the 3D model.</param>
+        /// <param name="origin">The position in the world that the seagull will spawn</param>
+        /// <param name="shipPosition">The position of the ship that the seagull will be following.</param>
         Seagull(std::string& model, glm::vec3 origin, glm::vec3 shipPosition) : m_seagullModel(model), m_position(origin) {
             m_seagullModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
             m_seagullModelMatrix = glm::rotate(m_seagullModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             m_seagullModelMatrix = glm::scale(m_seagullModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
 
             m_shipOffsets = m_position - shipPosition;
-            m_radius = glm::sqrt(pow(m_shipOffsets.x, 2.0f) + pow(m_shipOffsets.z, 2.0f));
+
+            m_radius = glm::sqrt(pow(m_shipOffsets.x, 2.0f) + pow(m_shipOffsets.z, 2.0f)); 
         }
 
         ~Seagull() {}
 
+        /// <summary>
+        /// Renders the seagull according to the ship's position.
+        /// </summary>
+        /// <param name="shipPosition">The position of the ship.</param>
+        /// <param name="shader">The current shader program.</param>
         void render(glm::vec3 shipPosition, Shader& shader) {
             m_seagullModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
             m_seagullModelMatrix = glm::rotate(m_seagullModelMatrix, glm::radians(m_angle), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -160,25 +192,48 @@ namespace GameObject {
         }
 
         // Getters
-        glm::vec3 getPosition() { return m_position; }
 
-        std::vector<Bug>& getBugs() { return m_bugs; }
+        /// <summary>
+        /// Returns the current position of the seagull.
+        /// </summary>
+        glm::vec3 getPosition() {
+            return m_position;
+        }
+        
+        /// <summary>
+        /// Returns a reference to the vector with the bugs.
+        /// </summary>
+        std::vector<Bug>& getBugs() {
+            return m_bugs;
+        }
  
      private:
-         float m_angle = 180.0f;
-         float m_radius;
-         Model m_seagullModel;
-         glm::vec3 m_position;
-         glm::mat4 m_seagullModelMatrix;
+         float m_angle = 180.0f;         ///< Angle of the seagull relative to the y-axis. Used for rotating.
+         float m_radius;                 ///< The radius that the seagull will use to circle the ship.
+         Model m_seagullModel;           ///< The 3D model of the seagull.
+         glm::vec3 m_position;           ///< The current position of the seagull.
+         glm::mat4 m_seagullModelMatrix; ///< The model matrix used in the shaders.
 
-         glm::vec3 m_shipOffsets; ///< offsets from the ship
-         std::vector<Bug> m_bugs;
+         glm::vec3 m_shipOffsets;        ///< offsets from the ship.
+         std::vector<Bug> m_bugs;        ///< vector containing the Bug objects.
 
          friend class Ship;
     };
 
+    /// <summary>
+    /// \class Ship
+    /// This is the ship class that contains all the information about our ship. Regarding its movement, 
+    /// the ship can move forward and backward, and also it can turn (rotate around the y-axis). The 
+    /// seagulls following the ship move exactly the same way.
+    /// </summary>
     class Ship {
      public:
+         /// <summary>
+         /// The constructor for the ship.
+         /// </summary>
+         /// <param name="shipModel">Path to the 3D model.</param>
+         /// <param name="seagullModel">Path to the seagull's 3D model. Used in the populate() function.</param>
+         /// <param name="origin">The position in the world that the ship will spawn.</param>
         Ship(std::string& shipModel, std::string& seagullModel, glm::vec3 origin = glm::vec3(0.0f, 0.0f, 0.0f)) : 
             m_shipModel(shipModel), 
             m_position(origin), 
@@ -190,10 +245,12 @@ namespace GameObject {
 
         ~Ship() {}
 
-        // Getters
-        Model& getModel() { return m_shipModel; }
-        glm::vec3 getPosition() { return m_position; }
-
+        /// <summary>
+        /// Moves the ships according to the button pressed. The ship
+        /// either moves forward or backward, or turns left/right around
+        /// the y-axis. Also, its speed changes if the Up/Down buttons 
+        /// are pressed.
+        /// </summary>
         void move(Ship_Movement movement, float deltaTime) {
             if (movement == Ship_Movement::SPEED_UP) {
                 m_movementSpeed += 0.05f;
@@ -222,6 +279,9 @@ namespace GameObject {
             }
         }
 
+        /// <summary>
+        /// Turns the ship around the y-axis. The seagulls follow accordingly.
+        /// </summary>
         void turn(Ship_Movement turn) {
             if (turn == Ship_Movement::LEFT)
                 m_angle += 0.5f;
@@ -245,6 +305,9 @@ namespace GameObject {
             }
         }
 
+        /// <summary>
+        /// Renders the ship.
+        /// </summary>
         void render(Shader& shader) {
             m_shipModelMatrix = glm::translate(glm::mat4(1.0f), m_position);
             m_shipModelMatrix = glm::rotate(m_shipModelMatrix, glm::radians(m_angle), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -253,109 +316,63 @@ namespace GameObject {
             m_shipModel.Draw(shader);
         }
 
+        /// <summary>
+        /// Creates the seagulls that will be following the ship. 
+        /// In this case, two seagulls will be created, one on the left and one 
+        /// on the right of the ship.
+        /// </summary>
         void populate(std::string& seagullModel) {
             m_seagulls.emplace_back(seagullModel, glm::vec3(m_position.x + 1.0f, m_position.y + 1.0f, m_position.z), m_position);
             m_seagulls.emplace_back(seagullModel, glm::vec3(m_position.x - 1.0f, m_position.y + 1.0f, m_position.z), m_position);
         }
 
         // Getters
-        glm::vec3 getFront() { return m_front; }
 
-        std::vector<Seagull>& getSeagulls() { return m_seagulls; }
+        /// <summary>
+        /// Returns the 3D model of the ship.
+        /// </summary>
+        Model& getModel() {
+            return m_shipModel;
+        }
 
-        float getAngle() { return m_angle; }
+        /// <summary>
+        /// Returns the current position of the ship.
+        /// </summary>
+        glm::vec3 getPosition() {
+            return m_position;
+        }
+
+        /// <summary>
+        /// Returns the front vector of the ship.
+        /// </summary>
+        glm::vec3 getFront() {
+            return m_front;
+        }
+
+        /// <summary>
+        /// Returns a reference to the vector with the Seagull objects.
+        /// </summary>
+        std::vector<Seagull>& getSeagulls() {
+            return m_seagulls;
+        }
+        
+        /// <summary>
+        /// Returns the angle of the ship relative to the y-axis.
+        /// </summary>
+        float getAngle() {
+            return m_angle;
+        }
 
      private:
-        float m_movementSpeed = 2.5f;
-        float m_angle = 180.0f;
+        float m_movementSpeed = 2.5f;    ///< The movement speed of the ship.
+        float m_angle = 180.0f;          ///< The angle of the ship relative to the y-axis
 
-        Model m_shipModel;
+        Model m_shipModel;               ///< The 3D model of the ship.
 
-        glm::vec3 m_position;
-        glm::mat4 m_shipModelMatrix;
-        glm::vec3 m_front;
+        glm::vec3 m_position;            ///< The current position of the ship.
+        glm::mat4 m_shipModelMatrix;     ///< The ship's model matrix.
+        glm::vec3 m_front;               ///< The ship's front vector.
 
-        std::vector<Seagull> m_seagulls;
-    };
-
-    class Ocean {
-     public:
-         Ocean(std::string& path) {
-             glGenVertexArrays(1, &m_VAO);
-             glGenBuffers(1, &m_VBO);
-             glGenBuffers(1, &m_EBO);
-
-             glBindVertexArray(m_VAO);
-
-             glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-             glBufferData(GL_ARRAY_BUFFER, sizeof(m_vertices), m_vertices, GL_STATIC_DRAW);
-
-             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-             glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(m_indices), m_indices, GL_STATIC_DRAW);
-
-             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-             glEnableVertexAttribArray(0);
-
-             glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-             glEnableVertexAttribArray(1);
-
-             glGenTextures(1, &m_texture);
-             glBindTexture(GL_TEXTURE_2D, m_texture);
-
-             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-             stbi_set_flip_vertically_on_load(true);
-             unsigned char* data = stbi_load(path.c_str(), &m_width, &m_height, &m_nrChannels, 0);
-
-             if (data) {
-                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_width, m_height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-                 glGenerateMipmap(GL_TEXTURE_2D);
-             } else {
-                 std::cout << "ERROR::Failed to load ocean texture" << std::endl;
-             }
-
-             stbi_image_free(data);
-         }
-
-         ~Ocean() {}
-
-         void render(Shader& shader) {
-             bind();
-             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-         }
-
-         unsigned int getTexture() {
-             return m_texture;
-         }
-     private:
-         void bind() {
-             glBindVertexArray(m_VAO);
-             glActiveTexture(GL_TEXTURE0 + m_texture);
-             glBindTexture(GL_TEXTURE_2D, m_texture);
-         }
-
-         unsigned int m_EBO;
-         unsigned int m_VBO;
-         unsigned int m_VAO;
-         unsigned int m_texture;
-         int m_width;
-         int m_height;
-         int m_nrChannels;
-
-         float m_vertices[20] = {
-             // positions       // texture coordinates
-             -0.5f, -0.5f, 0.0f,  0.0f, 0.0f, // bottom left
-             -0.5f, 0.5f, 0.0f,  0.0f, 1.0f, // upper left
-             0.5f, -0.5f, 0.0f,  1.0f, 0.0f, // bottom right
-             0.5f, 0.5f, 0.0f,  1.0f, 1.0f  // upper right
-         };
-
-         unsigned int m_indices[6] = {
-             0, 1, 2, // first triangle
-             1, 2, 3  // second triangle
-         };
+        std::vector<Seagull> m_seagulls; ///< Vector containing all the seagulls following  the ship.
     };
 }

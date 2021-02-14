@@ -1,3 +1,10 @@
+/*****************************************************************//**
+ * \file   Game.cpp
+ * \brief  This file contains the main() method of the game. Everything 
+ * is initialized here.
+ * \author Vasilis
+ * \date   February 2021
+ *********************************************************************/
 #include <glad.h>
 #include <glfw3.h>
 #include <glm.hpp>
@@ -15,28 +22,28 @@
 
 #include <iostream>
 
-void processInput(GLFWwindow* window, Shader& shader, GameObject::Ship& ship);
+void processInput(GLFWwindow* window, GameObject::Ship& ship);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+
+// Globals
 
 // window settings
 const unsigned int windowWidth = 1024;
 const unsigned int windowHeight = 768;
 
+// paths to the shaders
 std::string vShader{ "shaders\\vShader.txt" };
 std::string fShader{ "shaders\\fshader.txt" };
-std::string oceanVertexShader{ "shaders\\oceanVertexShader.txt" };
-std::string oceanFragmentShader{ "shaders\\oceanFragmentShader.txt" };
+
+// paths to the 3D models
 std::string shipModel{ "textures\\galleon-16th-century-ship\\GALEON.obj" };
 std::string islandModel{ "textures\\TropicalIsland_extras\\TropicalIsland.obj" };
 std::string seagullModel{ "textures\\3DLowPoly-Seagull\\Seagull.obj" };
-std::string bugModel{ "textures\\Dragonfly\\Dragonfly_obj\\Dragonfly.obj" };
-std::string oceanTexture{ "C:\\Users\\billaros\\source\\repos\\SailingShip\\textures\\photos_2018_7_16_fst_sea-texture.jpg" };
+std::string bugModel{ "textures\\Dragonfly\\Dragonfly.obj" };
 
 Camera::Camera camera{ glm::vec3(0.0f, 1.0f, 3.0f) };
-float cameraRadius = glm::sqrt(pow(camera.Position.y, 2.0f) + pow(camera.Position.z, 2.0f));
-float cameraAngle = glm::atan(camera.Position.y / camera.Position.z);
 
 float lastX = windowWidth / 2.0f;
 float lastY = windowHeight / 2.0f;
@@ -44,6 +51,17 @@ bool firstMouse = true;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+
+// the positions of the islands in the world
+std::vector<glm::vec3> islandPositions{
+        glm::vec3(2.0f, 0.0f, 0.0f),
+        glm::vec3(-2.0f, 0.0f, 0.0f),
+        glm::vec3(-2.0f, 0.0f, -3.0f),
+        glm::vec3(-2.0f, 0.0f, 4.0f),
+        glm::vec3(2.0f, 0.0f, 4.0f),
+        glm::vec3(5.0f, 0.0f, 0.0f),
+        glm::vec3(-5.0f, 0.0f, -6.0f)
+};
 
 int main() {
     glfwInit();
@@ -75,45 +93,38 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     Shader shader(vShader, fShader);
-    Shader oceanShader{ oceanVertexShader, oceanFragmentShader };
-    GameObject::Ship   ship{ shipModel, seagullModel };
-    GameObject::Island island{ islandModel, glm::vec3(2.0f, 0.0f, 0.0f) };
-    GameObject::Ocean  ocean{ oceanTexture };
-    
+
+    // Create the islands
+    std::vector<GameObject::Island> islands;
+    for(auto& position : islandPositions)
+         islands.emplace_back(islandModel, position);
+
+    // Create the ship and generate the seagulls
+    GameObject::Ship ship{ shipModel, seagullModel };
     ship.populate(seagullModel);
     std::vector<GameObject::Seagull>& seagulls = ship.getSeagulls();
     
+    // For each seagull, generate its bugs
     for (auto& seagull : seagulls)
         seagull.populate(bugModel);
-    
-    glm::vec3 islandPositions[] = {
-        glm::vec3(-2.0f, 1.0f, 0.0f),
-        glm::vec3(-2.0f, 0.0f, 0.0f)
-    };
 
+    // Set the projection matrix once outside the main loop, as it will remain the
+    // same throughout the execution of the program
     shader.use();
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 100.0f);
     shader.setMat4("projection", projection);
     
-    // light properties
+    // Light properties
     shader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
     shader.setVec3("light.ambient", 1.0f, 1.0f, 1.0f);
     shader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
     shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
-    // material properties
+    // Material properties
     shader.setFloat("material.shininess", 32.0f);
 
+    // View matrix. It is initialized with the camera position
     glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(90.0f - glm::radians(cameraAngle)), glm::vec3(1.0f, 0.0f, 0.0f));
-    
-    oceanShader.use();
-    oceanShader.setMat4("model", model);
-    oceanShader.setMat4("projection", projection);
-    oceanShader.setMat4("view", view);
-    oceanShader.setInt("oceanTexture", ocean.getTexture());
 
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = glfwGetTime();
@@ -121,7 +132,7 @@ int main() {
         lastFrame = currentFrame;
 
         shader.use();
-        processInput(window, shader, ship);
+        processInput(window, ship);
 
         glClearColor(0.0f, 0.1f, 0.858824f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -132,8 +143,10 @@ int main() {
         shader.setVec3("viewPos", camera.Position);
         shader.setMat4("view", view);
         
+        // Render the ship, the islands, the seagulls and the bugs
         ship.render(shader);
-        island.render(shader);
+        for (auto& island : islands)
+            island.render(shader);
         
         for (auto& seagull : seagulls) {
             seagull.render(ship.getPosition(), shader);
@@ -141,9 +154,6 @@ int main() {
                 bug.render(seagull.getPosition(), shader);
         }
 
-        
-        /*oceanShader.use();
-        ocean.render(oceanShader);*/
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -158,7 +168,7 @@ int main() {
 /// <param name="window">Pointer to the OpenGL active window.</param>
 /// <param name="shader">Reference to the active shader program.</param>
 /// <param name="ship">Reference to the ship.</param>
-void processInput(GLFWwindow* window, Shader& shader, GameObject::Ship& ship) {
+void processInput(GLFWwindow* window, GameObject::Ship& ship) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
